@@ -1,0 +1,8 @@
+/bin
+/build
+/.settings
+codeShell
+releaseLS
+oracleBak
+
+*.swp
