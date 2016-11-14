@@ -1,14 +1,12 @@
 #!/bin/bash
 # create 20160310114308
-# modify 2016-03-31 15:34:20
 # desc 从ftp上下载最新文件的脚本
 	# 背景说明 需要从ftp服务器上取最新的备份文件 所以想写一个脚本自动从ftp上取最新的文件 注这里只取最新的1个文件
 	# 说明：该脚本中所需要的ftp相关信息可以以命令行的形式传入 也可以改脚本中的默认配置直接运行该脚本也可。具体使用参见下面的how to use部分
 
 
-# 注如下是个变量 程序运行时可以输出
 author=man003@163.com
-version=V5\(2016-03-31\)
+version=V6-20160810
 
 # =============================how to use==============================
 # 使用前提
@@ -41,9 +39,34 @@ version=V5\(2016-03-31\)
 	# fix 修复如果取出的最新文件名为空 提示信息错误容易误导用户的bug
 	# * 所有参数都走默认配置 如果不通过命令行指定参数就走默认配置。这样做的好处是直接敲脚本名称就运行了 不需要写很长的参数
 	# + 增加版本说明 在程序运行最后输出
+# V6 20160810
+	# 采用delete.sh删除旧文件 支持保留最近N个文件的功能 原来是删除N天前的文件 这样的话如果周六周日不备份 周一再备份时就不能保证保留最近N个文件的功能
 
 ###############################默认配置################################################
 # 如下的配置默认值 如果脚本没有加选项设置相关值就用配置值即可
+
+
+# 用于获得脚本所在路径的，因为如果你把该脚本加到PATH中然后在其它路径中使用命令 wcm.sh 则使用默认配置文件时会出错
+# 注 这里cd pwd是有道理的，如果不加 你有可能获取到 . 
+BASE_PATH=$(cd $(dirname "$0");pwd)
+# 获取脚本名
+SHELL_NAME=`basename $0`
+PARENT_PATH=`dirname $BASE_PATH`;
+
+# 设置环境变量
+PATH=$PATH:$PARENT_PATH/util/;
+
+# 依赖的shell 一行一个 如果没有x 权限 自动设置
+RELIANT_SH="
+	$PARENT_PATH/util/delete.sh
+"
+for rs in $RELIANT_SH
+do
+	# 如果没有可执行权限 把权限加上
+	if [ ! -x $rs ]; then
+		chmod +x $rs
+	fi
+done
 
 # FTP ip 用户名 密码
 IP=192.168.1.1
@@ -57,6 +80,7 @@ remotePath=bak-project/svn/
 localPath=/Users/mang/work/dataBak/svnBak
 
 # 默认删除几天前的备份
+# 从20160810 V6版本该参数变成保留N个文件的意思 而不是删除N天前的备份的意思
 deleteDays=3 
 
 # 设置压缩包的格式 默认只取这种压缩包后缀的文件
@@ -110,7 +134,8 @@ done
 # 注 即使我加了空格 以crontab中输出还是没有输出 所以我先把时间放到变量里再输出
 echo
 # TODO 如下-d 参数在crontab中不认 但是直接执行脚本认 所以目前也没有想到好办法
-startTimeStr=`date -d today +"%Y-%m-%d %T"`
+#startTimeStr=`date -d today +"%Y-%m-%d %T"`
+startTimeStr=`date  +"%Y-%m-%d %H:%M:%S"`
 echo start at "$startTimeStr" ====================
 date
 
@@ -140,7 +165,8 @@ else
 fi	
 
 # 先从ftp上找出最新的文件 再下载
-# 如何找到进阶新的文件呢？ ls 按时间排序 然后tail -1 取出最后一行 这就是最新的文件
+# 如何找到最新的文件呢？ ls 按时间排序 然后tail -1 取出最后一行 这就是最新的文件
+# 注 20160811发现ftp上 ls -lt 是按正序排序的 而在你的mac上 ls -lt是按逆序排序的
 
 if [ $isConnectOk = "true" ]
 then
@@ -181,24 +207,15 @@ EOF
 		get $file_name 
 		bye
 EOF
-	# 删除比下载文件早3天的文件
-	echo  删除比下载文件早 $deleteDays 天的文件......
 
-	# TODO 如下-d 参数 在crontab中不认 但是直接执行脚本可以运行  目前没有解决办法
-	#touch -r $file_name -d "$deleteDays days ago" time.tmp;
-	# 注 如下先把要删除的文件打印出来
-	#find $localPath ! -newer time.tmp -name "*.$suffix"|xargs ls -l;
-	#find $localPath ! -newer time.tmp -name "*.$suffix"|xargs rm -rf;
-	# 注 为什么不需要删除time.tmp呢 因为小面 ! -newer 会包含当前文件 所以上一句就直接删除了
-	# rm -rf time.tmp;
+	echo 保留最近3个版本的文件 如下是删除的文件
+	#echo "delete.sh -n3 -o $localPath/lastDelete.log -s $suffix $localPath >/dev/null"
+	#delete.sh -n3 -o $localPath/lastDelete.log -s $suffix $localPath >/dev/null 2>&1
+	# 如下使用$PARENT_PATH 是为了以后换网盘路径不影响这里
+	delete.sh -n3 -o $localPath/lastDelete.log -s $suffix $localPath >>$PARENT_PATH/util/log/delete.sh_autoGetFileFromFTP.log 2>&1
 
-	# XXX 因为上面的代码touch -d 参数在crontab中不认 所以上面删除N天前的代码有问题 所以我先用下面的代码将就
-	echo 因crontab中不认touch -d命令 先用变通的方法删除N天前的文件
-	# 注 可通过如下的方式查看最后运行的命令 以快速查找错误
-	echo "find $localPath -name "*$suffix" -mtime +"$deleteDays"|xargs ls -l";
-	# 注不要写成 find . -name *.* 这样只能查temp.out这样的文件 但查不出temp这样的文件
-	find $localPath -name "*$suffix" -mtime +"$deleteDays"|xargs ls -l;
-	find $localPath -name "*$suffix" -mtime +"$deleteDays"|xargs rm -rf;
+	# 如下把要删除的文件输出到控制台 方便重定向写日志
+	cat $localPath/lastDelete.log
 
 	fi
 
@@ -210,5 +227,6 @@ fi
 endTime=`date +%s`
 timeInterval=$(( ($endTime-$startTime)/60 ))
 date
-echo end at `date -d today +"%Y-%m-%d %T"` ... 用时$timeInterval 分钟====================
+echo end at `date  +"%Y-%m-%d %H:%M:%S"` ... 用时$timeInterval 分钟====================
+#echo end at `date -d today +"%Y-%m-%d %T"` ... 用时$timeInterval 分钟====================
 echo *************develop by ${author} ${version}************;

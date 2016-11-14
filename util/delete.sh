@@ -84,7 +84,8 @@ datestr=`date "+%Y%m%d%H%M%S"`
 
 if [ ${IS_OUTPUT_RUNTIME}X = "true"X ]
 then
-	echo start at `date -d today +"%Y-%m-%d %T"`====================
+	#echo start at `date -d today +"%Y-%m-%d %T"`====================
+	echo start at `date  +"%Y-%m-%d %H:%M:%S"`====================
 	startTime=`date +%s`
 fi
 
@@ -257,7 +258,8 @@ then
 	echo
 	endTime=`date +%s`
 	timeInterval=$(( ($endTime-$startTime)/60 ))
-	echo end at `date -d today +"%Y-%m-%d %T"`... 用时$timeInterval 分钟====================
+	echo end at `date  +"%Y-%m-%d %H:%M:%S"`... 用时$timeInterval 分钟====================
+	#echo end at `date -d today +"%Y-%m-%d %T"`... 用时$timeInterval 分钟====================
 fi
 # 输出版本信息
 if [ ${IS_OUTPUT_VERSION}X = "true"X ]
