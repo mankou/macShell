@@ -59,6 +59,7 @@ PATH=$PATH:$PARENT_PATH/util/;
 # 依赖的shell 一行一个 如果没有x 权限 自动设置
 RELIANT_SH="
 	$PARENT_PATH/util/delete.sh
+	$PARENT_PATH/util/writeLog.sh
 "
 for rs in $RELIANT_SH
 do
@@ -99,6 +100,7 @@ reConnectInterval=10
 
 ###############################默认配置################################################
 
+writeLog.sh $0 "start"
 # 解析命令选项
 echo 正在解析命令行选项......
 while getopts :u:r:l:s:d: opt

@@ -100,7 +100,7 @@ cd $SHELL_PATH
 
 # 获取脚本名
 SHELL_NAME=`basename $0`
-# 获取脚本所以父路径
+# 获取脚本所在父路径
 PARENT_PATH=`dirname $SHELL_PATH`;
 
 # 设置环境变量

@@ -125,6 +125,7 @@ PATH=$PATH:$PARENT_PATH/util/;
 RELIANT_SH="
 	$PARENT_PATH/util/getAbsolutePath.sh
 	$PARENT_PATH/util/getConfig.sh
+	$PARENT_PATH/util/writeLog.sh
 "
 #$PARENT_PATH/util/tp.sh
 for rs in $RELIANT_SH
@@ -176,6 +177,7 @@ function fun_processStatisticInfo {
 	count_Real=$[$count_Real+1]
 }
 
+writeLog.sh $0 "start"
 
 # 解析选项
 if [ ${IS_OUTPUT_PARSE_PARAMETER}X = "true"X ] 

@@ -8,7 +8,7 @@
 ## 支持 -o 参数 将删除的文件放取指定日志文件中方便其它脚本调用写日志
 
 author=man003@163.com
-version=V1-20160809
+version=V1.1-20161124
 
 #############################使用说明####################################################
 
@@ -43,13 +43,23 @@ version=V1-20160809
 #./delete.sh -n2 -l -o /Users/mang/Desktop/delete.log testDir >/dev/null 2>&1
 #cat /Users/mang/Desktop/delete.log
 
-# 示例6 在其它脚本中使用
+# 示例6 指定是否删除空目录
+# 如上所有命令都支持-r 选项 表示删除文件后 同时删除空目录
+# 注 -r选项不能单独使用 必须依附-d -n选项使用 不能单独删除空目录
+# 删除2天前的文件 并且删除空目录
+# ./delete.sh -r -d2 testDir/
+# 保留某目录下最新的2个文件或者文件夹  并且删除空目录
+# ./delete.sh -r n2  testDir/
+
+# 示例7 在其它脚本中使用
 # 注在其它脚本中调用该脚本时不需要该脚本输出的日志 只想知道删除了哪些文件 如下用-o 参数把删除的文件重定向到某一文件 然后再cat出来可用于写日志等
 # 注 如下2>&1是必须的 否则该脚本会输出rm的命令 因为delete.sh中使用了xargs -t 其输出在错误输出中 20160810试验的
 # 如下三句是代码示例
 #delete.sh -n3 -o $localPath/lastDelete.log -s $suffix $localPath >/dev/null 2>&1
 # 如下把要删除的文件输出到控制台 方便重定向写日志
 #cat $localPath/lastDelete.log
+
+
 
 
 # ==============================exitcode=========================
@@ -70,6 +80,7 @@ version=V1-20160809
 
 # ==============================history=========================
 # 20160810 V1 初版
+# 20161124 V1.1 增加删除空目录功能、原来解析选项的代码用公用函数代替
 
 #########################如下是配置区域#########################################################
 
@@ -101,6 +112,8 @@ PATH=$PATH:$PARENT_PATH/util/;
 # 依赖的shell 一行一个 如果没有x 权限 自动设置
 RELIANT_SH="
 	$PARENT_PATH/util/getAbsolutePath.sh
+	$PARENT_PATH/util/deleteEmptyDir.sh
+	$PARENT_PATH/util/writeLog.sh
 "
 #$PARENT_PATH/util/tp.sh
 
@@ -132,27 +145,48 @@ lsAwkTmp=$TMP_PATH/${SHELL_NAME}_ls_awk.tmp
 deleteTmp=$TMP_PATH/${SHELL_NAME}_delete.tmp
 
 #########################如上是配置区域#########################################################
+# 输出解析选项的日志函数 以减少重复代码
+function fun_OutputOpinion {
+    if [ ${IS_OUTPUT_PARSE_PARAMETER}X = "true"X ] 
+	then
+		echo "[parse opinion]found the -$1 option,$2"
+	fi
+}
+
+# 清除空目录
+function fun_deleteEmptyDir {
+	if [ ${isDeleteEmptyDir}X = "true"X ]
+	then
+		echo 删除空目录... |tee -a $deleteTmp
+		deleteEmptyDir.sh $1 |tee -a $deleteTmp	
+	fi
+}
+
+# 写运行日志
+writeLog.sh $0 "start"
 
 echo 正在解析命令行选项 $*
-while getopts d:n:s:o:l opt
+while getopts d:n:s:o:lr opt
 do
   case "$opt" in
-     d) echo "[parse parameter]found the -d option,$OPTARG"
+     d) fun_OutputOpinion $opt $OPTARG
 	 	deleteDays=$OPTARG	
 		shellFunction="deleteDays";;
 		# 注 最后一句必须加两个分号
-     n) echo "[parse parameter]found the -n option,$OPTARG"
+     n) fun_OutputOpinion $opt $OPTARG
 	    newestCount=$OPTARG
 		shellFunction="retainNewest";;
-     s) echo "[parse parameter]found the -s option,$OPTARG"
+     s) fun_OutputOpinion $opt $OPTARG
 		suffix=$OPTARG;;
-     l) echo "[parse parameter]found the -l option,$OPTARG"
-		is_list="true";;
-     o) echo "[parse parameter]found the -o option,$OPTARG"
+     l) fun_OutputOpinion $opt $OPTARG
+		is_list=true;;
+     r) fun_OutputOpinion $opt $OPTARG
+		isDeleteEmptyDir=true;;
+     o) fun_OutputOpinion $opt $OPTARG
 		 # 将delete_log处理成绝对路径 并且如果父级目录不存在则创建
 		delete_log=`getAbsolutePath.sh -fc $OPTARG`
 		echo [parse parameter]处理相对路径后 $delete_log;;
-     *) echo "[parse parameter]unknown option:$opt"
+     *) fun_OutputOpinion $opt $OPTARG
 		exit 148;;
   esac
 done
@@ -197,6 +231,9 @@ then
 	then
 		find $deletePath -name "*$suffix" -mtime +"$deleteDays"|xargs rm -rf;
 	fi
+
+	# 清除空目录
+	fun_deleteEmptyDir $deletePath
 elif [ ${shellFunction}X="retainNewest"X ]
 then
 	#echo "retainNewest" 功能";
@@ -233,6 +270,9 @@ then
 		#cat $deleteTmp|awk '{print $9}'|xargs -t -n5 rm -rf 2>/dev/null
 		cat $deleteTmp|awk '{print $9}'|xargs -t -n5 rm -rf
 	fi
+
+	# 清除空目录
+	fun_deleteEmptyDir $deletePath
 
 fi
 
