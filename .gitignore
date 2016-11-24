@@ -4,6 +4,7 @@
 trash
 log
 tmp
+.tmp
 .DS_Store
 *.swp
 old
