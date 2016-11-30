@@ -6,7 +6,7 @@
 
 
 author=man003@163.com
-version=V6-20160810
+version=V7-20161130
 
 # =============================how to use==============================
 # 使用前提
@@ -41,10 +41,24 @@ version=V6-20160810
 	# + 增加版本说明 在程序运行最后输出
 # V6 20160810
 	# 采用delete.sh删除旧文件 支持保留最近N个文件的功能 原来是删除N天前的文件 这样的话如果周六周日不备份 周一再备份时就不能保证保留最近N个文件的功能
+# V7 20161130
+	# 规范代码 
+		# 用一些函数代替原来的写法 如init check_parameter 
+		# 采用参数version outputRuntime控制是否输出版本信息 运行时间 
+		# 采用writeLog.sh写日志
 
 ###############################默认配置################################################
-# 如下的配置默认值 如果脚本没有加选项设置相关值就用配置值即可
 
+##### 系统变量#####
+
+#是否输出脚本运行时间 true表示输出 false表示不输出
+IS_OUTPUT_RUNTIME=false
+
+#是否在脚本执行完后输出版本信息 true表示输出 false表示不输出
+IS_OUTPUT_VERSION=false
+
+#是否输出解析命令行日志
+IS_OUTPUT_PARSE_PARAMETER=false
 
 # 用于获得脚本所在路径的，因为如果你把该脚本加到PATH中然后在其它路径中使用命令 wcm.sh 则使用默认配置文件时会出错
 # 注 这里cd pwd是有道理的，如果不加 你有可能获取到 . 
@@ -73,7 +87,7 @@ done
 CALLBACK_MESSAGE=XX
 
 
-###############################默认配置################################################
+###############################函数################################################
 # 通用的init方法
 function fun_init_common {
 	if [ ${IS_CD_SHELL_PATH}X = "true"X ]
@@ -123,7 +137,6 @@ function fun_init_variable {
 	#suffix=.* 
 	suffix=zip
 
-
 	# 如果连接不上重新连接的次数
 	reConnect=3
 
@@ -159,7 +172,7 @@ fun_init_variable
 # 将命令行参数放到变量里 以后用 CLP表示 Command line parameters
 CLP=$*
 # 解析命令选项
-while getopts :u:r:l:s:d:DVM: opt
+while getopts :u:r:l:s:d:DM: opt
 do
   case "$opt" in
      u) fun_OutputOpinion $opt $OPTARG
@@ -179,25 +192,42 @@ do
      D) fun_OutputOpinion $opt $OPTARG
 		#是否debug模式 debug模式下会把执行的exp命令输出来方便测试
 		IS_DEBUG=true;;
-     V) fun_OutputOpinion $opt $OPTARG
-		# 输出运行时间信息
-		IS_OUTPUT_RUNTIME=true
-		# 输出版本信息
-		IS_OUTPUT_VERSION=true
-		;;
      M) fun_OutputOpinion $opt $OPTARG
 		CALLBACK_MESSAGE=$OPTARG;;
      *) fun_OutputOpinion $opt $OPTARG
 		 exit 404;;
   esac
-
 done
+
+# 解析参数
+shift $[ $OPTIND -1 ]
+PARAMETER_COUNT=1
+# 如下把解析的参数都输出来 方便查看
+for param in "$@"
+do
+	case $param in
+		"version" | "VERSION") 
+			IS_OUTPUT_VERSION=true;;
+		"outputRuntime") 
+			IS_OUTPUT_RUNTIME=true;;
+		*) ;;
+	esac
+   PARAMETER_COUNT=$[ $PARAMETER_COUNT+1 ]
+done
+
+# 取参数示例 如下只取出数组的第一个元素
+# 注 为什么加() 把其变成数组 如果写成paramArray=$@就不是数组了 你就取不出元素了
+# 注 因为我不会一次把元素取出来 所以用了2句 如本想以 ${$@[0]}
+paramArray=($@);
+#deletePath=${paramArray[0]}
 
 # 校验参数
 fun_checkParameter
 # 初始化
 fun_init
 
+
+# 如下写脚本逻辑
 
 # 切换到本地目标目录 因为ftp get 命令是把文件下载到当前目录
 cd $localPath;

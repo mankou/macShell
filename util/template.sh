@@ -42,20 +42,22 @@ version=V1-20160728
 
 
 # ==============================history=========================
-## 2016-2-19 V1 初版
+## V1 2016-2-19 V1 初版
+	# 说明1
+	# 说明2
 
 
 #########################如下是配置区域#########################################################
 ##### 系统变量#####
 
 #是否输出脚本运行时间 true表示输出 false表示不输出
-IS_OUTPUT_RUNTIME=true;
+IS_OUTPUT_RUNTIME=false
 
 #是否在脚本执行完后输出版本信息 true表示输出 false表示不输出
-IS_OUTPUT_VERSION=true
+IS_OUTPUT_VERSION=false
 
 #是否输出解析命令行日志
-IS_OUTPUT_PARSE_PARAMETER=true
+IS_OUTPUT_PARSE_PARAMETER=false
 
 
 #是否创建tmp目录用于存储临时文件
@@ -201,7 +203,7 @@ fi
 # 将命令行参数放到变量里 以后用 CLP表示 Command line parameters
 CLP=$*
 #如果某个选项字母后面要加参数则在后面加一冒号：
-while getopts d:n:c:s:lDVM: opt
+while getopts d:n:c:s:lDM: opt
 do
   case "$opt" in
      d) fun_OutputOpinion $opt $OPTARG
@@ -218,12 +220,6 @@ do
      D) fun_OutputOpinion $opt $OPTARG
 		#是否debug模式 debug模式下会把执行的exp命令输出来方便测试
 		IS_DEBUG=true;;
-     V) fun_OutputOpinion $opt $OPTARG
-		# 输出运行时间信息
-		IS_OUTPUT_RUNTIME=true
-		# 输出版本信息
-		IS_OUTPUT_VERSION=true
-		;;
      M) fun_OutputOpinion $opt $OPTARG
 		CALLBACK_MESSAGE=$OPTARG;;
      *) fun_OutputOpinion $opt $OPTARG
@@ -231,19 +227,20 @@ do
   esac
 done
 
-
 # 解析参数
 shift $[ $OPTIND -1 ]
-parameterCount=1
-
+PARAMETER_COUNT=1
 # 如下把解析的参数都输出来 方便查看
 for param in "$@"
 do
-	if [ ${IS_OUTPUT_PARSE_PARAMETER}X = "true"X ]
-	then
-	   echo "[parse parameter]parameter $parameterCount:$param"
-	fi
-   parameterCount=$[ $parameterCount+1 ]
+	case $param in
+		"version" | "VERSION") 
+			IS_OUTPUT_VERSION=true;;
+		"outputRuntime") 
+			IS_OUTPUT_RUNTIME=true;;
+		*) ;;
+	esac
+   PARAMETER_COUNT=$[ $PARAMETER_COUNT+1 ]
 done
 
 # 取参数示例 如下只取出数组的第一个元素
@@ -251,6 +248,7 @@ done
 # 注 因为我不会一次把元素取出来 所以用了2句 如本想以 ${$@[0]}
 paramArray=($@);
 #deletePath=${paramArray[0]}
+
 
 # 校验参数
 fun_checkParameter

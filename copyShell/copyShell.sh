@@ -9,7 +9,7 @@
 
 
 author=man003@163.com
-version=V3.1-20161130
+version=V4-20161130
 
 #############################使用说明####################################################
 #==============================how to use==============================
@@ -49,6 +49,11 @@ version=V3.1-20161130
 # 注1 目标目录下不能有其它文件 否则使用时间戳拷备会把该目录下其它文件也删除掉
 # 注2 -d n 中的n表示只保留N个最新的备份 如果为3则保留3个最新的备份其它删除 如果为0则表示不删除备份
 
+# 示例4 输出版本、运行时间等信息
+# 程序默认不输出版本、运行时间等信息可通过参数去控制
+#./copyShell.sh -f testDateModel1-1.config -d3 --version --outputRuntime
+# 如上version 表示输出版本信息
+# 如上outputRuntime 表示输出运行时间信息
 
 # ==============================exitcode=========================
 ##exit 1 当n对n的情况下 源路径个数与目标路径个数不一致
@@ -57,18 +62,26 @@ version=V3.1-20161130
 ##exit 148 未指定的参数 为什么是148呢 因为404取模256就是148
 
 
-
 # history
-# 2016-08-09 V1 初版 支持一对一 一对多 多对一 多对多的拷备
-# 2016-10-28 V2 [copyCode类型]支持代码拷备模式copyCode 用于拷备代码用 一般用于增量升级
-# 2016-10-28 V2 [copyCode类型]将配置文件中源文件路径放在另一个文件中 以方便使用
-# 2016-10-30 V2 [copyCode类型]针对内部类的情况进行特殊处理 并输出统计信息（复制多少个 正确多少个 错误多少个）
-# 2016-11-09 V2 用-D 表示debugger模式 原来-d 表示debugger模式 因为我想用-d表示其它功能 如清除目录等
-# 2016-11-09 V2 其它拷备模式也支持拷备信息统计 并且把统计信息的代码统一在一个函数里
-# 2016-11-14 V2 fix copyCode类型如果拷备源是目录则默认不拷备并且输出日志 但可以通过-R选项控制是否处理目录
-# 2016-11-29 V3 + 支持dateModel模式
-# 				* 重构代码将公用的代码用函数代替 如fun_copy 
-# 2016-11-30 V3.1 + 规范代码支持-D -V -M 选项、公用代码放到init、checkParameter函数中
+# 2016-08-09 V1 
+	# 初版 支持一对一 一对多 多对一 多对多的拷备
+# 2016-10-28 V2 
+	# [copyCode类型]支持代码拷备模式copyCode 用于拷备代码用 一般用于增量升级
+	# [copyCode类型]将配置文件中源文件路径放在另一个文件中 以方便使用
+# 2016-10-30 V2 
+	# [copyCode类型]针对内部类的情况进行特殊处理 并输出统计信息（复制多少个 正确多少个 错误多少个）
+	# 用-D 表示debugger模式 原来-d 表示debugger模式 因为我想用-d表示其它功能 如清除目录等
+# 2016-11-09 V2 
+	# 其它拷备模式也支持拷备信息统计 并且把统计信息的代码统一在一个函数里
+# 2016-11-14 V2 
+	# fix copyCode类型如果拷备源是目录则默认不拷备并且输出日志 但可以通过-R选项控制是否处理目录
+# 2016-11-29 V3 
+	# + 支持dateModel模式
+	# * 重构代码将公用的代码用函数代替 如fun_copy 
+# 2016-11-30 V3.1 
+	# + 规范代码支持-D -V -M 选项、公用代码放到init、checkParameter函数中
+# 2016-11-30 V4 
+	# + 去掉-V选项 用参数 version outputRuntime代替
 
 
 # 技巧点
@@ -326,7 +339,7 @@ fi
 # 将命令行参数放到变量里 以后用 CLP表示 Command line parameters
 CLP=$*
 #如果某个选项字母后面要加参数则在后面加一冒号：
-while getopts rRf:d:DVM: opt
+while getopts rRf:d:DM: opt
 do
   case "$opt" in
      f) fun_OutputOpinion $opt $OPTARG
@@ -352,12 +365,6 @@ do
 		#输出解析命令行的日志
 		IS_OUTPUT_PARSE_PARAMETER=true
 		;;
-     V) fun_OutputOpinion $opt $OPTARG
-		# 输出运行时间信息
-		IS_OUTPUT_RUNTIME=true
-		# 输出版本信息
-		IS_OUTPUT_VERSION=true
-		;;
      M) fun_OutputOpinion $opt $OPTARG
 		# 用于写日志用
 		CALLBACK_MESSAGE=$OPTARG;;
@@ -365,6 +372,29 @@ do
 		exit 148;;
   esac
 done
+
+# 解析参数
+shift $[ $OPTIND -1 ]
+PARAMETER_COUNT=1
+# 如下把解析的参数都输出来 方便查看
+for param in "$@"
+do
+	case $param in
+		"version" | "VERSION") 
+			IS_OUTPUT_VERSION=true;;
+		"outputRuntime") 
+			IS_OUTPUT_RUNTIME=true;;
+		*) ;;
+	esac
+   PARAMETER_COUNT=$[ $PARAMETER_COUNT+1 ]
+done
+
+# 取参数示例 如下只取出数组的第一个元素
+# 注 为什么加() 把其变成数组 如果写成paramArray=$@就不是数组了 你就取不出元素了
+# 注 因为我不会一次把元素取出来 所以用了2句 如本想以 ${$@[0]}
+paramArray=($@);
+#deletePath=${paramArray[0]}
+
 
 # 参数校验
 fun_checkParameter
