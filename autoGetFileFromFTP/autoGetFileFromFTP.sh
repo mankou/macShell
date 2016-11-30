@@ -69,34 +69,9 @@ do
 	fi
 done
 
-# FTP ip 用户名 密码
-IP=192.168.1.1
-username=maning
-password=1
+#默认的调用信息 如果不通过-M参数传入调用信息则这里默认为XX
+CALLBACK_MESSAGE=XX
 
-# FTP路径 即要下载的文件在ftp的那个路径下
-remotePath=bak-project/svn/
-
-# 本地路径 即要将文件下载到本地哪个路径下
-localPath=/Users/mang/work/dataBak/svnBak
-
-# 默认删除几天前的备份
-# 从20160810 V6版本该参数变成保留N个文件的意思 而不是删除N天前的备份的意思
-deleteDays=3 
-
-# 设置压缩包的格式 默认只取这种压缩包后缀的文件
-#suffix=zip 
-	# 注 如果设置成这样则表示全部文件 因为 cat temp|grep ".*" 会把全部行取出来  注 必须用引号把.*括起来 我试了
-	# 如果是 cat temp|grep zip 会把包含zip的行取出来
-#suffix=.* 
-suffix=zip
-
-
-# 如果连接不上重新连接的次数
-reConnect=3
-
-# 重新连接的时间间隔 默认10分钟
-reConnectInterval=10
 
 ###############################默认配置################################################
 # 通用的init方法
@@ -119,7 +94,41 @@ function fun_init_common {
 		mkdir $TMP_PATH
 	fi
 
-	writeLog.sh $0 "[${CALLBACK_MESSAGE}] start"
+	# 调用脚本名称 命令行参数 调用信息和自己想添加的信息(这里写start也可以自己指定)
+	writeLog.sh $0 "$CLP" "${CALLBACK_MESSAGE} start"
+
+}
+
+# 初始化自己的变量
+function fun_init_variable {
+	# FTP ip 用户名 密码
+	IP=192.168.1.1
+	username=maning
+	password=1
+
+	# FTP路径 即要下载的文件在ftp的那个路径下
+	remotePath=bak-project/svn/
+
+	# 本地路径 即要将文件下载到本地哪个路径下
+	localPath=/Users/mang/work/dataBak/svnBak
+
+	# 默认删除几天前的备份
+	# 从20160810 V6版本该参数变成保留N个文件的意思 而不是删除N天前的备份的意思
+	deleteDays=3 
+
+	# 设置压缩包的格式 默认只取这种压缩包后缀的文件
+	#suffix=zip 
+		# 注 如果设置成这样则表示全部文件 因为 cat temp|grep ".*" 会把全部行取出来  注 必须用引号把.*括起来 我试了
+		# 如果是 cat temp|grep zip 会把包含zip的行取出来
+	#suffix=.* 
+	suffix=zip
+
+
+	# 如果连接不上重新连接的次数
+	reConnect=3
+
+	# 重新连接的时间间隔 默认10分钟
+	reConnectInterval=10
 
 }
 
@@ -144,9 +153,12 @@ function fun_OutputOpinion {
 	fi
 }
 
+# 初始化自己的变量
+fun_init_variable
 
+# 将命令行参数放到变量里 以后用 CLP表示 Command line parameters
+CLP=$*
 # 解析命令选项
-echo 正在解析命令行选项......
 while getopts :u:r:l:s:d:DVM: opt
 do
   case "$opt" in
