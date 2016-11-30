@@ -8,7 +8,7 @@
 ## 支持 -o 参数 将删除的文件放取指定日志文件中方便其它脚本调用写日志
 
 author=man003@163.com
-version=V1.1-20161124
+version=V1.2-20161130
 
 #############################使用说明####################################################
 
@@ -20,9 +20,9 @@ version=V1.1-20161124
 # 删除路径最好用绝对路径 相对路径也行 但推荐用绝对路径
 
 
-# 示例说明 如下所有命令都可以加上 -l 开启调试选项
+# 示例说明 如下所有命令都可以加上 -D 开启调试选项
 # 这样只列出程序要删除的文件但不会真的删除 
-# ./delete.sh -n2 -l testDir
+# ./delete.sh -n2 -D testDir
 
 # 示例1 保留某目录下最新的2个文件或者文件夹 
 # ./delete.sh -n2  testDir/
@@ -81,24 +81,19 @@ version=V1.1-20161124
 # ==============================history=========================
 # 20160810 V1 初版
 # 20161124 V1.1 增加删除空目录功能、原来解析选项的代码用公用函数代替
+# 20161130 V1.2 规范代码 加入-V -M 选项、一些公用代码纳入函数中处理 如init checkParameter
 
 #########################如下是配置区域#########################################################
 
 #是否输出脚本运行时间 true表示输出 false表示不输出
-IS_OUTPUT_RUNTIME="true";
+IS_OUTPUT_RUNTIME=false
 
 #是否在脚本执行完后输出版本信息 true表示输出 false表示不输出
-IS_OUTPUT_VERSION="true"
+IS_OUTPUT_VERSION=false
 
 #时间戳
 datestr=`date "+%Y%m%d%H%M%S"`
 
-if [ ${IS_OUTPUT_RUNTIME}X = "true"X ]
-then
-	#echo start at `date -d today +"%Y-%m-%d %T"`====================
-	echo start at `date  +"%Y-%m-%d %H:%M:%S"`====================
-	startTime=`date +%s`
-fi
 
 # 用于获得脚本所在路径的，因为如果你把该脚本加到PATH中然后在其它路径中使用命令 wcm.sh 则使用默认配置文件时会出错
 # 注 这里cd pwd是有道理的，如果不加 你有可能获取到 . 
@@ -128,11 +123,6 @@ done
 
 # 如果tmp目录不存在 则新建
 TMP_PATH=$BASE_PATH/tmp
-if [ ! -d $TMP_PATH ]
-then
-	echo $TMP_PATH 目录不存在 将新建
-	mkdir $TMP_PATH
-fi
 
 
 
@@ -145,6 +135,44 @@ lsAwkTmp=$TMP_PATH/${SHELL_NAME}_ls_awk.tmp
 deleteTmp=$TMP_PATH/${SHELL_NAME}_delete.tmp
 
 #########################如上是配置区域#########################################################
+# 通用的init方法
+function fun_init_common {
+	if [ ${IS_OUTPUT_RUNTIME}X = "true"X ]
+	then
+		#echo start at `date -d today +"%Y-%m-%d %T"`====================
+		echo start at `date  +"%Y-%m-%d %H:%M:%S"`====================
+		startTime=`date +%s`
+	fi
+
+	if [ ! -d $TMP_PATH ]
+	then
+		echo $TMP_PATH 目录不存在 将新建
+		mkdir $TMP_PATH
+	fi
+
+	# 写运行日志
+	writeLog.sh $0 "[${CALLBACK_MESSAGE}] start"
+
+}
+
+# init方法
+function fun_init { 
+	fun_init_common
+}
+
+# 参数校验
+function fun_checkParameter {
+	if [ -z $deletePath ]
+	then
+		echo [error]删除路径不能为空
+		exit 1
+	else
+		echo [parse parameter]删除路径 $deletePath
+		deletePath=`getAbsolutePath.sh -fc $deletePath`
+		echo [parse parameter]处理相对路径后 $deletePath
+	fi
+}
+
 # 输出解析选项的日志函数 以减少重复代码
 function fun_OutputOpinion {
     if [ ${IS_OUTPUT_PARSE_PARAMETER}X = "true"X ] 
@@ -162,11 +190,9 @@ function fun_deleteEmptyDir {
 	fi
 }
 
-# 写运行日志
-writeLog.sh $0 "start"
 
 echo 正在解析命令行选项 $*
-while getopts d:n:s:o:lr opt
+while getopts d:n:s:o:lrDVM: opt
 do
   case "$opt" in
      d) fun_OutputOpinion $opt $OPTARG
@@ -178,14 +204,23 @@ do
 		shellFunction="retainNewest";;
      s) fun_OutputOpinion $opt $OPTARG
 		suffix=$OPTARG;;
-     l) fun_OutputOpinion $opt $OPTARG
-		is_list=true;;
      r) fun_OutputOpinion $opt $OPTARG
 		isDeleteEmptyDir=true;;
      o) fun_OutputOpinion $opt $OPTARG
 		 # 将delete_log处理成绝对路径 并且如果父级目录不存在则创建
 		delete_log=`getAbsolutePath.sh -fc $OPTARG`
 		echo [parse parameter]处理相对路径后 $delete_log;;
+     D) fun_OutputOpinion $opt $OPTARG
+		IS_DEBUG=true;;
+     V) fun_OutputOpinion $opt $OPTARG
+		# 输出运行时间信息
+		IS_OUTPUT_RUNTIME=true
+		# 输出版本信息
+		IS_OUTPUT_VERSION=true
+		;;
+     M) fun_OutputOpinion $opt $OPTARG
+		# 用于写日志用
+		CALLBACK_MESSAGE=$OPTARG;;
      *) fun_OutputOpinion $opt $OPTARG
 		exit 148;;
   esac
@@ -206,17 +241,14 @@ do
    count=$[ $count+1 ]
 done
 
-if [ -z $deletePath ]
-then
-	echo [error]删除路径不能为空
-	exit 1
-else
-	echo [parse parameter]删除路径 $deletePath
-	deletePath=`getAbsolutePath.sh -fc $deletePath`
-	echo [parse parameter]处理相对路径后 $deletePath
-fi
+# 初始化
+fun_init
+
+#参数校验
+fun_checkParameter
 
 ## 这里是脚本逻辑
+
 echo
 echo 要删除的文件如下
 # 判断是deleteDays功能还是retainNewest功能
@@ -227,7 +259,7 @@ then
 	find $deletePath -name "*$suffix" -mtime +"$deleteDays"|xargs ls -l|tee $deleteTmp;
 
 	# 如果输入-l参数 则只列出要删除的内容 不实际删除 免得删除错了
-	if [ ! ${is_list}X = "true"X  ]
+	if [ ! ${IS_DEBUG}X = "true"X  ]
 	then
 		find $deletePath -name "*$suffix" -mtime +"$deleteDays"|xargs rm -rf;
 	fi
@@ -258,7 +290,7 @@ then
 
 	# 如果输入-l参数 则只列出要删除的内容 不实际删除 免得删除错了
 	# 这里如果没有输入-l参数 则真的删除
-	if [ ! ${is_list}X = "true"X ]
+	if [ ! ${IS_DEBUG}X = "true"X ]
 	then
 		#cat $BASE_PATH/delete.temp
 		# 注如下-t 是为了把命令输出出来
