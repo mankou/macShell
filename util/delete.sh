@@ -151,7 +151,7 @@ function fun_init_common {
 	fi
 
 	# 写运行日志
-	writeLog.sh $0 "[${CALLBACK_MESSAGE}] start"
+	writeLog.sh $0 "$CLP" "${CALLBACK_MESSAGE} start"
 
 }
 
@@ -191,7 +191,9 @@ function fun_deleteEmptyDir {
 }
 
 
-echo 正在解析命令行选项 $*
+# 将命令行参数放到变量里 以后用 CLP表示 Command line parameters
+CLP=$*
+#echo 正在解析命令行选项 $*
 while getopts d:n:s:o:lrDVM: opt
 do
   case "$opt" in

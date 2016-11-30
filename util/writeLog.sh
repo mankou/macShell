@@ -20,9 +20,10 @@ logPath_detail=$SHELL_PATH/commonLog/shRun_detail.log
 # 自定义参数
 # 调用脚本信息 其取自调用者的$0 通过这个可以判断是从哪里调的
 shName=$1 
+clp=$2
 
 # 输出日志信息
-message=$2
+message=$3
 
 datestr=`date "+%Y-%m-%d %H:%M:%S"`
 
@@ -36,4 +37,4 @@ then
 fi
 
 echo $datestr [$shell_name] $message >>$logPath
-echo $datestr [$shell_name] $message $shName >>$logPath_detail
+echo $datestr [$shell_name] $message $shName $clp >>$logPath_detail

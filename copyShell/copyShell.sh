@@ -138,6 +138,9 @@ done
 
 TMP_PATH=$SHELL_PATH/tmp
 
+#默认的调用信息 如果不通过-M参数传入调用信息则这里默认为XX
+CALLBACK_MESSAGE=XX
+
 ## 自定义变量 或者设置默认值
 # 对于copyCode类型是否复制目录 默认不复制 可通过-R选项控制该变量为true
 # 为什么默认不复制目录呢?因为对于提取源码这种行为一般都是从svn日志中提取出要复制哪些文件,这些日志是很详细的能具体到文件所以没有必要加目录,而且如果加目录会把该目录下所有文件都拷来这不符合你拷备源码的逻辑 所以默认不拷备目录
@@ -164,7 +167,7 @@ function fun_init_common {
 		mkdir $TMP_PATH
 	fi
 
-	writeLog.sh $0 "[${CALLBACK_MESSAGE}] start"
+	writeLog.sh $0 "$CLP" "${CALLBACK_MESSAGE} start"
 
 }
 
@@ -309,6 +312,8 @@ if [ ${IS_OUTPUT_PARSE_PARAMETER}X = "true"X ]
 then
 	echo 正在解析命令行选项 $*
 fi
+# 将命令行参数放到变量里 以后用 CLP表示 Command line parameters
+CLP=$*
 #如果某个选项字母后面要加参数则在后面加一冒号：
 while getopts rRf:d:DVM: opt
 do

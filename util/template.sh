@@ -112,6 +112,8 @@ done
 
 TMP_PATH=$SHELL_PATH/tmp
 
+#默认的调用信息 如果不通过-M参数传入调用信息则这里默认为XX
+CALLBACK_MESSAGE=XX
 
 #########################如上是配置区域#########################################################
 # 通用的init方法
@@ -133,8 +135,13 @@ function fun_init_common {
 		echo $TMP_PATH 目录不存在 将新建
 		mkdir $TMP_PATH
 	fi
+	
+	# 写日志
+	# 调用脚本名称 命令行参数 调用信息和自己想添加的信息(这里写start也可以自己指定)
+	writeLog.sh $0 "$CLP" "${CALLBACK_MESSAGE} start"
 
-	writeLog.sh $0 "[${CALLBACK_MESSAGE}] start"
+	#如下是如何在脚本中使用-M参数的示例
+	#delete.sh -M "$SHELL_NAME-$CALLBACK_MESSAGE" -n $dateModel_retainCount -o $TMP_PATH/delete.log $1>/dev/null 2>&1
 
 }
 
@@ -181,6 +188,8 @@ if [ ${IS_OUTPUT_PARSE_PARAMETER}X = "true"X ]
 then
 	echo 正在解析命令行选项 $*
 fi
+# 将命令行参数放到变量里 以后用 CLP表示 Command line parameters
+CLP=$*
 #如果某个选项字母后面要加参数则在后面加一冒号：
 while getopts d:n:c:s:lDVM: opt
 do
