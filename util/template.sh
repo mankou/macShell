@@ -145,6 +145,13 @@ function fun_init_common {
 
 }
 
+
+# 初始化自己的变量
+function fun_init_variable {
+	# 注已测试函数中的语句不能为空 必须有一句命令 否则报错 所以我加一句免得出错
+	echo >/dev/null
+}
+
 # init方法
 function fun_init {
 	fun_init_common
@@ -182,6 +189,9 @@ function fun_OutputOpinion {
 	fi
 }
 
+
+# 初始化自己的变量
+fun_init_variable
 
 # 解析选项
 if [ ${IS_OUTPUT_PARSE_PARAMETER}X = "true"X ] 

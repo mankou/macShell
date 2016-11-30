@@ -125,15 +125,6 @@ done
 TMP_PATH=$BASE_PATH/tmp
 
 
-
-# 是否删除临时文件 true 表示删除 false表示不删除
-IS_DELETE_TEMP="false"
-
-#定义临时文件路径
-lsTmp=$TMP_PATH/${SHELL_NAME}_ls.tmp
-lsAwkTmp=$TMP_PATH/${SHELL_NAME}_ls_awk.tmp
-deleteTmp=$TMP_PATH/${SHELL_NAME}_delete.tmp
-
 #########################如上是配置区域#########################################################
 # 通用的init方法
 function fun_init_common {
@@ -152,8 +143,22 @@ function fun_init_common {
 
 	# 写运行日志
 	writeLog.sh $0 "$CLP" "${CALLBACK_MESSAGE} start"
-
 }
+
+# 初始化自己的变量
+function fun_init_variable {
+	# 注已测试函数中的语句不能为空 必须有一句命令 否则报错 所以我加一句免得出错
+	echo >/dev/null
+
+	# 是否删除临时文件 true 表示删除 false表示不删除
+	IS_DELETE_TEMP=false
+
+	#定义临时文件路径
+	lsTmp=$TMP_PATH/${SHELL_NAME}_ls.tmp
+	lsAwkTmp=$TMP_PATH/${SHELL_NAME}_ls_awk.tmp
+	deleteTmp=$TMP_PATH/${SHELL_NAME}_delete.tmp
+}
+
 
 # init方法
 function fun_init { 
@@ -190,6 +195,8 @@ function fun_deleteEmptyDir {
 	fi
 }
 
+# 初始化变量
+fun_init_variable
 
 # 将命令行参数放到变量里 以后用 CLP表示 Command line parameters
 CLP=$*

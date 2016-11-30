@@ -171,9 +171,11 @@ function fun_init_common {
 
 }
 
-# init方法
-function fun_init {
-	fun_init_common
+
+# 初始化自己的变量
+function fun_init_variable {
+	# 注已测试函数中的语句不能为空 必须有一句命令 否则报错 所以我加一句免得出错
+	echo >/dev/null
 
 	# 时间戳模式下的时间字符串 这里先默认与datestr一样
 	dateModel_dateStr=$datestr
@@ -184,6 +186,12 @@ function fun_init {
 	count_Real=0
 	count_Ok=0
 	count_Error=0
+}
+
+# init方法
+function fun_init {
+	fun_init_common
+
 }
 
 # 校验参数
@@ -306,6 +314,9 @@ function fun_dateModel_delete {
 		dateModel_echoCount=$[$dateModel_echoCount + 1]
 	fi
 }
+
+# 初始化变量
+fun_init_variable
 
 # 解析选项
 if [ ${IS_OUTPUT_PARSE_PARAMETER}X = "true"X ] 
