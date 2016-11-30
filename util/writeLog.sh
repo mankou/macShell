@@ -18,16 +18,19 @@ logPath=$SHELL_PATH/commonLog/shRun.log
 logPath_detail=$SHELL_PATH/commonLog/shRun_detail.log
 
 # 自定义参数
+# 当前时间
+datestr=`date "+%Y-%m-%d %H:%M:%S"`
+
 # 调用脚本信息 其取自调用者的$0 通过这个可以判断是从哪里调的
-shName=$1 
+# 脚本全名
+shellFullName=$1 
+# 脚本名称
+shell_name=`basename $shellFullName`
+# 脚本参数
 clp=$2
 
 # 输出日志信息
 message=$3
-
-datestr=`date "+%Y-%m-%d %H:%M:%S"`
-
-shell_name=`basename $shName`
 
 #如果日志文件父目录不存在则新建
 LOG_PARENT_PATH=`dirname $logPath`;
@@ -36,5 +39,6 @@ then
 	mkdir -p $LOG_PARENT_PATH
 fi
 
+# 时间 脚本名 调用者脚本名
 echo $datestr [$shell_name] $message >>$logPath
-echo $datestr [$shell_name] $message $shName $clp >>$logPath_detail
+echo $datestr [$shell_name] $message $shellFullName $clp >>$logPath_detail
