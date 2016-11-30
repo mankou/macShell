@@ -68,12 +68,6 @@ IS_CD_SHELL_PATH=false
 #时间戳
 datestr=`date "+%Y%m%d%H%M%S"`
 
-if [ ${IS_OUTPUT_RUNTIME}X = "true"X ]
-then
-	echo start at `date  +"%Y-%m-%d %H:%M:%S"`====================
-	startTime=`date +%s`
-fi
-
 # 当前路径
 CURRENT_PATH=`pwd`
 
@@ -83,11 +77,6 @@ CURRENT_PATH=`pwd`
 # 如你经常将配置文件放在sh同一级目录下  脚本 -f con.config 有可能出错
 # 已经测试虽然下面的命令中有cd操作 但我发现其不会改变当前路径
 SHELL_PATH=$(cd $(dirname "$0");pwd)
-if [ ${IS_CD_SHELL_PATH}X = "true"X ]
-then
-	cd $SHELL_PATH
-fi
-
 
 # 用于获得脚本所在路径的
 # 因为如果你把该脚本加到PATH中然后在其它路径中使用命令 wcm.sh 则使用默认配置文件时会出错
@@ -110,6 +99,7 @@ PATH=$PATH:$PARENT_PATH/util/;
 # 依赖的shell 一行一个 如果没有x 权限 自动设置
 RELIANT_SH="
 	$PARENT_PATH/util/getAbsolutePath.sh
+	$PARENT_PATH/util/writeLog.sh
 "
 #$PARENT_PATH/util/tp.sh
 for rs in $RELIANT_SH
@@ -121,19 +111,62 @@ do
 done
 
 TMP_PATH=$SHELL_PATH/tmp
-# 如果tmp目录不存在 则新建
-if  [ ${IS_MKDIR_TMP}X = "true"X ] && [ ! -d $TMP_PATH ]
-then
-	echo $TMP_PATH 目录不存在 将新建
-	mkdir $TMP_PATH
-fi
 
-
-## 自定义变量 或者设置默认值
-#project=tv
-#codePath=/Users/mang/work/code/osc/frontCode/osc-tv-web-20160623-menu-JR0623
 
 #########################如上是配置区域#########################################################
+# 通用的init方法
+function fun_init_common {
+	if [ ${IS_CD_SHELL_PATH}X = "true"X ]
+	then
+		cd $SHELL_PATH
+	fi
+
+	if [ ${IS_OUTPUT_RUNTIME}X = "true"X ]
+	then
+		echo start at `date  +"%Y-%m-%d %H:%M:%S"`====================
+		startTime=`date +%s`
+	fi
+
+	# 如果tmp目录不存在 则新建
+	if  [ ${IS_MKDIR_TMP}X = "true"X ] && [ ! -d $TMP_PATH ]
+	then
+		echo $TMP_PATH 目录不存在 将新建
+		mkdir $TMP_PATH
+	fi
+
+	writeLog.sh $0 "[${CALLBACK_MESSAGE}] start"
+
+}
+
+# init方法
+function fun_init {
+	fun_init_common
+	#如下写自己的init方法
+
+	## 自定义变量 或者设置默认值
+	#project=tv
+	#codePath=/Users/mang/work/code/osc/frontCode/osc-tv-web-20160623-menu-JR0623
+}
+
+# 校验参数
+function fun_checkParameter {
+	# 注已测试函数中的语句不能为空 必须有一句命令 否则报错 所以我加一句免得出错
+	echo >/dev/null
+
+	if [ -z $CONFIG ]
+	then
+		# 输出错误信息 如下>&2 将输出重定向到标准出错 
+		echo [ERR-155] -f 参数值不能为空 >&2
+		exit 155
+	fi
+
+	if [ ! -e $CONFIG ]
+	then
+		echo [ERR-156] 配置文件不存在 $CONFIG >&2
+		exit 156
+	fi
+}
+
 # 输出解析选项的日志函数 以减少重复代码
 function fun_OutputOpinion {
     if [ ${IS_OUTPUT_PARSE_PARAMETER}X = "true"X ] 
@@ -149,7 +182,7 @@ then
 	echo 正在解析命令行选项 $*
 fi
 #如果某个选项字母后面要加参数则在后面加一冒号：
-while getopts d:n:c:s:l opt
+while getopts d:n:c:s:lDVM: opt
 do
   case "$opt" in
      d) fun_OutputOpinion $opt $OPTARG
@@ -163,6 +196,17 @@ do
 		suffix=$OPTARG;;
      l) fun_OutputOpinion $opt $OPTARG
 		is_list="true";;
+     D) fun_OutputOpinion $opt $OPTARG
+		#是否debug模式 debug模式下会把执行的exp命令输出来方便测试
+		IS_DEBUG=true;;
+     V) fun_OutputOpinion $opt $OPTARG
+		# 输出运行时间信息
+		IS_OUTPUT_RUNTIME=true
+		# 输出版本信息
+		IS_OUTPUT_VERSION=true
+		;;
+     M) fun_OutputOpinion $opt $OPTARG
+		CALLBACK_MESSAGE=$OPTARG;;
      *) fun_OutputOpinion $opt $OPTARG
 		exit 148;;
   esac
@@ -189,6 +233,11 @@ done
 paramArray=($@);
 #deletePath=${paramArray[0]}
 
+# 校验参数
+fun_checkParameter
+
+# 初始化
+fun_init
 
 #####################下面写脚本逻辑#####################################
 echo
@@ -196,22 +245,8 @@ echo 在这里写脚本逻辑
 echo
 
 
-#####参数校验#####
-#if [ -z $userInfo ]
-#then
-#	# 输出错误信息 如下>&2 将输出重定向到标准出错 
-#	echo [ERR-155] -u 参数值不能为空 >&2
-#	exit 155
-#fi
-
-# 相对路径转换为绝对路径示例
-#dmpPath=`getAbsolutePath.sh -dc $dmpPath`
-
-
 
 #####################上面写脚本逻辑#####################################
-
-
 
 # 输出脚本运行时间信息
 if [ ${IS_OUTPUT_RUNTIME}X = "true"X ] 

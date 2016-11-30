@@ -99,49 +99,94 @@ reConnect=3
 reConnectInterval=10
 
 ###############################默认配置################################################
+# 通用的init方法
+function fun_init_common {
+	if [ ${IS_CD_SHELL_PATH}X = "true"X ]
+	then
+		cd $SHELL_PATH
+	fi
 
-writeLog.sh $0 "start"
+	if [ ${IS_OUTPUT_RUNTIME}X = "true"X ]
+	then
+		echo start at `date  +"%Y-%m-%d %H:%M:%S"`====================
+		startTime=`date +%s`
+	fi
+
+	# 如果tmp目录不存在 则新建
+	if  [ ${IS_MKDIR_TMP}X = "true"X ] && [ ! -d $TMP_PATH ]
+	then
+		echo $TMP_PATH 目录不存在 将新建
+		mkdir $TMP_PATH
+	fi
+
+	writeLog.sh $0 "[${CALLBACK_MESSAGE}] start"
+
+}
+
+# init方法
+function fun_init {
+	fun_init_common
+	#如下写自己的init方法
+
+}
+
+# 校验参数
+function fun_checkParameter {
+	# 注已测试函数中的语句不能为空 必须有一句命令 否则报错 所以我加一句免得出错
+	echo >/dev/null
+}
+
+# 输出解析选项的日志函数 以减少重复代码
+function fun_OutputOpinion {
+    if [ ${IS_OUTPUT_PARSE_PARAMETER}X = "true"X ] 
+	then
+		echo "[parse opinion]found the -$1 option,$2"
+	fi
+}
+
+
 # 解析命令选项
 echo 正在解析命令行选项......
-while getopts :u:r:l:s:d: opt
+while getopts :u:r:l:s:d:DVM: opt
 do
   case "$opt" in
-     u) echo "found the -u option,$OPTARG"
+     u) fun_OutputOpinion $opt $OPTARG
 		# 解析IP、用户名、密码 字符串格式如 mang/1@192.168.1.1
 		IP=`echo $OPTARG|cut -d@ -f2`;
 		username=`echo $OPTARG|cut -d/ -f1`;
 		password=`echo $OPTARG|cut -d/ -f2|cut -d@ -f1`;;
 		# 注 最后一句必须加两个分号
-     r) echo "found the -r option,$OPTARG"
+     r) fun_OutputOpinion $opt $OPTARG
 		 remotePath=$OPTARG;;
-     l) echo "found the -l option,$OPTARG"
+     l) fun_OutputOpinion $opt $OPTARG
 		 localPath=$OPTARG;;
-     s) echo "found the -s option,$OPTARG"
+     s) fun_OutputOpinion $opt $OPTARG
 		 suffix=$OPTARG;;
-     d) echo "found the -d option,$OPTARG"
+     d) fun_OutputOpinion $opt $OPTARG
 		 deleteDays=$OPTARG;;
-     *) echo "unknown option:$opt"
+     D) fun_OutputOpinion $opt $OPTARG
+		#是否debug模式 debug模式下会把执行的exp命令输出来方便测试
+		IS_DEBUG=true;;
+     V) fun_OutputOpinion $opt $OPTARG
+		# 输出运行时间信息
+		IS_OUTPUT_RUNTIME=true
+		# 输出版本信息
+		IS_OUTPUT_VERSION=true
+		;;
+     M) fun_OutputOpinion $opt $OPTARG
+		CALLBACK_MESSAGE=$OPTARG;;
+     *) fun_OutputOpinion $opt $OPTARG
 		 exit 404;;
   esac
 
 done
 
+# 校验参数
+fun_checkParameter
+# 初始化
+fun_init
 
 
-#shellDirPath=$(cd "$(dirname "$0")"; pwd)
-#echo currentPath is $shellDirPath;
-
-
-# tips: 注如下 反斜杠`` 后面必须有一个空格 否则执行时有可能输出空（我直接运行脚本没问题 放到crontab中出现问题）
-# 注 即使我加了空格 以crontab中输出还是没有输出 所以我先把时间放到变量里再输出
-echo
-# TODO 如下-d 参数在crontab中不认 但是直接执行脚本认 所以目前也没有想到好办法
-#startTimeStr=`date -d today +"%Y-%m-%d %T"`
-startTimeStr=`date  +"%Y-%m-%d %H:%M:%S"`
-echo start at "$startTimeStr" ====================
-date
-
-startTime=`date +%s`
 # 切换到本地目标目录 因为ftp get 命令是把文件下载到当前目录
 cd $localPath;
 
@@ -214,7 +259,7 @@ EOF
 	#echo "delete.sh -n3 -o $localPath/lastDelete.log -s $suffix $localPath >/dev/null"
 	#delete.sh -n3 -o $localPath/lastDelete.log -s $suffix $localPath >/dev/null 2>&1
 	# 如下使用$PARENT_PATH 是为了以后换网盘路径不影响这里
-	delete.sh -n3 -o $localPath/lastDelete.log -s $suffix $localPath >>$PARENT_PATH/util/log/delete.sh_autoGetFileFromFTP.log 2>&1
+	delete.sh -M "$SHELL_NAME-$CALLBACK_MESSAGE" -n3 -o $localPath/lastDelete.log -s $suffix $localPath >>$PARENT_PATH/util/log/delete.sh_autoGetFileFromFTP.log 2>&1
 
 	# 如下把要删除的文件输出到控制台 方便重定向写日志
 	cat $localPath/lastDelete.log
@@ -226,9 +271,18 @@ EOF
 
 fi
 
-endTime=`date +%s`
-timeInterval=$(( ($endTime-$startTime)/60 ))
-date
-echo end at `date  +"%Y-%m-%d %H:%M:%S"` ... 用时$timeInterval 分钟====================
-#echo end at `date -d today +"%Y-%m-%d %T"` ... 用时$timeInterval 分钟====================
-echo *************develop by ${author} ${version}************;
+#####################上面写脚本逻辑#####################################
+# 输出脚本运行时间信息
+if [ ${IS_OUTPUT_RUNTIME}X = "true"X ] 
+then
+	echo
+	endTime=`date +%s`
+	timeInterval=$(( ($endTime-$startTime)/60 ))
+	echo end at `date  +"%Y-%m-%d %H:%M:%S"`... 用时$timeInterval 分钟====================
+	#echo end at `date -d today +"%Y-%m-%d %T"`... 用时$timeInterval 分钟====================
+fi
+# 输出版本信息
+if [ ${IS_OUTPUT_VERSION}X = "true"X ]
+then
+	echo *************develop by ${author} ${version}************;
+fi

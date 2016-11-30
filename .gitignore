@@ -9,21 +9,19 @@ tmp
 *.swp
 old
 bak
-脚本学习
 
 
-codeShell
-
-releaseLS
-
-oracleBak
 
 
-copyShell/license-408.config
-copyShell/license-yhsq.config
-copyShell/changeLog-file-uniq.txt
-copyShell/auxstl-branch.config
-copyShell/auxstl-trunk.config
+# 不想同步的配置文件
+copyShell/config/license/
+copyShell/config/408src/
+copyShell/config/auxsrc/
 
+# 不想同步的目录
+util/commonLog/
 dmpsh
-
+codeShell
+releaseLS
+oracleBak
+脚本学习
