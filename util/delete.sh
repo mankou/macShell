@@ -8,13 +8,13 @@
 ## 支持 -o 参数 将删除的文件放取指定日志文件中方便其它脚本调用写日志
 
 author=man003@163.com
-version=V1.2-20161208
+version=V1.3-20161208
 
 #==============================TODO==============================
-# -n参数不支持文件中带有空格
+# -n参数不支持文件名带有空格
 	# -n 参数不能删除文件中有空格的文件
 	# 但是-d参数支持 因为我用find -print0|xargs -0可解决 
-	# 但-n参数中 使用的是awk '{print $9}' 这块需要解决
+	# 因-n参数中 使用的是awk '{print $9}' 这块还没有很好的解决 所以不支持文件名有空格
 	#/Users/mang/AppData/百度云同步盘/mac/bat-mac/util/delete.sh -D -n 1 /Users/mang/Desktop/shell-delete/
 
 #############################使用说明####################################################
@@ -52,11 +52,14 @@ version=V1.2-20161208
 
 # 示例6 指定是否删除空目录
 # 如上所有命令都支持-r 选项 表示删除文件后 同时删除空目录
-# 注 -r选项不能单独使用 必须依附-d -n选项使用 不能单独删除空目录
 # 删除2天前的文件 并且删除空目录
 # ./delete.sh -r -d2 testDir/
 # 保留某目录下最新的2个文件或者文件夹  并且删除空目录
 # ./delete.sh -r n2  testDir/
+# 也可单独使用 表示删除空目录
+	# ./delete.sh -r testDir/
+	# 注 -D 选项与-r选项同时使用时 虽然不会真的删除空目录 但也不会列出要删除的空目录
+	# 为什么不能列出呢?因为其调用的deleteEmptyDir.sh是通过循环 删除空目录后 再判断空目录个数 是否继续删除 所以其不能列出具体将要删除哪些目录
 
 # 示例7 在其它脚本中使用
 # 注在其它脚本中调用该脚本时不需要该脚本输出的日志 只想知道删除了哪些文件 如下用-o 参数把删除的文件重定向到某一文件 然后再cat出来可用于写日志等
@@ -94,6 +97,8 @@ version=V1.2-20161208
 # 20161208 V1.2
 	# fix 修复-d选项不能删除带有空格的文件的bug(注-n选项也有这个问题未解决)
 	# * 支持version/outputRntime参数 把原来的-V选项去掉
+# 20161208 V1.3
+	# * -r选项可单独使用删除空目录 原来必须和-d -n选项同时使用才行 
 
 #########################如下是配置区域#########################################################
 
@@ -203,7 +208,10 @@ function fun_deleteEmptyDir {
 	if [ ${isDeleteEmptyDir}X = "true"X ]
 	then
 		echo 删除空目录... |tee -a $deleteTmp
-		deleteEmptyDir.sh $1 |tee -a $deleteTmp	
+		if [ ! ${IS_DEBUG}X = "true"X ]
+		then
+			deleteEmptyDir.sh $1 |tee -a $deleteTmp	
+		fi
 	fi
 }
 
@@ -286,10 +294,7 @@ then
 	then
 		find $deletePath -name "*$suffix" -mtime +"$deleteDays" -print0|xargs -0 -n5 rm -rf;
 	fi
-
-	# 清除空目录
-	fun_deleteEmptyDir $deletePath
-elif [ ${shellFunction}X="retainNewest"X ]
+elif [ ${shellFunction}X = "retainNewest"X ]
 then
 	#echo "retainNewest" 功能";
 	# 只保留最近的N个文件
@@ -325,11 +330,11 @@ then
 		#cat $deleteTmp|awk '{print $9}'|xargs -t -n5 rm -rf 2>/dev/null
 		cat $deleteTmp|awk '{print $9}'|xargs -t -n5 rm -rf
 	fi
-
-	# 清除空目录
-	fun_deleteEmptyDir $deletePath
-
 fi
+
+
+# 清除空目录
+fun_deleteEmptyDir $deletePath
 
 # 如果用户输入了删除日志路径 则这里只把要删除的文件写入日志文件方便其它程序调用
 # XXX 我不能解释为什么用 -n不对 而用 ! -z 是对的呢

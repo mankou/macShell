@@ -24,6 +24,6 @@ while [ $emptyCount -gt 0  ]
 do
 	find $1 -type d -empty
 	#find $1 -type d -empty|xargs -t -n5 rm  -rf 
-	find $1 -type d -empty|xargs -n5 rm  -rf 
+	find $1 -type d -empty -print0 |xargs -0 -n5 rm  -rf 
 	emptyCount=`find $1 -type d -empty|wc -l`
 done
