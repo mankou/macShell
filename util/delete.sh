@@ -10,6 +10,13 @@
 author=man003@163.com
 version=V1.2-20161208
 
+#==============================TODO==============================
+# -n参数不支持文件中带有空格
+	# -n 参数不能删除文件中有空格的文件
+	# 但是-d参数支持 因为我用find -print0|xargs -0可解决 
+	# 但-n参数中 使用的是awk '{print $9}' 这块需要解决
+	#/Users/mang/AppData/百度云同步盘/mac/bat-mac/util/delete.sh -D -n 1 /Users/mang/Desktop/shell-delete/
+
 #############################使用说明####################################################
 
 #==============================how to use==============================
@@ -76,7 +83,6 @@ version=V1.2-20161208
 	## sed -n "$[newestCount+1],\$p" $BASE_PATH/ls.temp|tee $BASE_PATH/delete.temp
 
 
-#==============================todo==============================
 
 # ==============================history=========================
 # 20160810 V1 
@@ -272,6 +278,7 @@ if [ ${shellFunction}X = "deleteDays"X ]
 then
 	#echo "find $localPath -name "*$suffix" -mtime +"$deleteDays"|xargs ls -l";
 	# 注不要写成 find . -name *.* 这样只能查temp.out这样的文件 但查不出temp这样的文件
+	# 如下find -print0|xargs -0 是为了处理文件名有空格的文件
 	find $deletePath -name "*$suffix" -mtime +"$deleteDays" -print0|xargs -0 ls -l|tee $deleteTmp;
 
 	# 如果输入-l参数 则只列出要删除的内容 不实际删除 免得删除错了
