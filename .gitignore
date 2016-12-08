@@ -9,6 +9,7 @@ tmp
 *.swp
 old
 bak
+.DS_Store
 
 
 
