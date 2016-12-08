@@ -8,7 +8,7 @@
 ## 支持 -o 参数 将删除的文件放取指定日志文件中方便其它脚本调用写日志
 
 author=man003@163.com
-version=V1.2-20161130
+version=V1.2-20161208
 
 #############################使用说明####################################################
 
@@ -85,6 +85,9 @@ version=V1.2-20161130
 	# 增加删除空目录功能、原来解析选项的代码用公用函数代替
 # 20161130 V1.2 
 	# 规范代码 加入-V -M 选项、一些公用代码纳入函数中处理 如init checkParameter
+# 20161208 V1.2
+	# fix 修复-d选项不能删除带有空格的文件的bug(注-n选项也有这个问题未解决)
+	# * 支持version/outputRntime参数 把原来的-V选项去掉
 
 #########################如下是配置区域#########################################################
 
@@ -204,7 +207,7 @@ fun_init_variable
 # 将命令行参数放到变量里 以后用 CLP表示 Command line parameters
 CLP=$*
 #echo 正在解析命令行选项 $*
-while getopts d:n:s:o:lrDVM: opt
+while getopts d:n:s:o:rDVM: opt
 do
   case "$opt" in
      d) fun_OutputOpinion $opt $OPTARG
@@ -224,12 +227,6 @@ do
 		echo [parse parameter]处理相对路径后 $delete_log;;
      D) fun_OutputOpinion $opt $OPTARG
 		IS_DEBUG=true;;
-     V) fun_OutputOpinion $opt $OPTARG
-		# 输出运行时间信息
-		IS_OUTPUT_RUNTIME=true
-		# 输出版本信息
-		IS_OUTPUT_VERSION=true
-		;;
      M) fun_OutputOpinion $opt $OPTARG
 		# 用于写日志用
 		CALLBACK_MESSAGE=$OPTARG;;
@@ -240,18 +237,25 @@ done
 
 # 取出要删除的路径 这里以参数的形式输入(非选项)
 shift $[ $OPTIND -1 ]
-count=1
+PARAMETER_COUNT=1
+
+# 如下把解析的参数都输出来 方便查看
+for param in "$@"
+do
+	case $param in
+		"version" | "VERSION") 
+			IS_OUTPUT_VERSION=true;;
+		"outputRuntime") 
+			IS_OUTPUT_RUNTIME=true;;
+		*) ;;
+	esac
+   PARAMETER_COUNT=$[ $PARAMETER_COUNT+1 ]
+done
 # 只取出数组的第一个元素
 # 注 为什么加() 把其变成数组 如果写成paramArray=$@就不是数组了 你就取不出元素了
 # 注 因为我不会一次把元素取出来 所以用了2句 如本想以 ${$@[0]}
 paramArray=($@);
 deletePath=${paramArray[0]}
-# 如下把解析的参数都输出来 方便查看
-for param in "$@"
-do
-   echo "[parse parameter]parameter $count:$param"
-   count=$[ $count+1 ]
-done
 
 # 初始化
 fun_init
@@ -268,12 +272,12 @@ if [ ${shellFunction}X = "deleteDays"X ]
 then
 	#echo "find $localPath -name "*$suffix" -mtime +"$deleteDays"|xargs ls -l";
 	# 注不要写成 find . -name *.* 这样只能查temp.out这样的文件 但查不出temp这样的文件
-	find $deletePath -name "*$suffix" -mtime +"$deleteDays"|xargs ls -l|tee $deleteTmp;
+	find $deletePath -name "*$suffix" -mtime +"$deleteDays" -print0|xargs -0 ls -l|tee $deleteTmp;
 
 	# 如果输入-l参数 则只列出要删除的内容 不实际删除 免得删除错了
 	if [ ! ${IS_DEBUG}X = "true"X  ]
 	then
-		find $deletePath -name "*$suffix" -mtime +"$deleteDays"|xargs rm -rf;
+		find $deletePath -name "*$suffix" -mtime +"$deleteDays" -print0|xargs -0 -n5 rm -rf;
 	fi
 
 	# 清除空目录
