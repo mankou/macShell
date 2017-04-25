@@ -18,6 +18,7 @@ Usage: $SHELL_NAME [options]
   -f |    from path
   -t |    to path
   -d |    day
+  -p |    prefix
 
 show some examples
 # 每天一个日志(默认) 以test做为前缀
@@ -28,6 +29,9 @@ show some examples
 
 # 每月一个日志 以test做为前缀
 ./cleanLog.sh -f /home/bin/nohup.out  -t /home/bak/ -d "-1month" -p test
+
+# 配置到crontab中每天0点0分 备份dxp日志 并清空日志文件
+0 0 * * * /home/dxp/shell/cleanLog.sh -f /home/dxp/dataexchange/bin/nohup.out -t /home/dxp/nohup/dxp -p dxp
 EOM
 exit 0
 }

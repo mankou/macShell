@@ -280,6 +280,7 @@ fun_checkParameter
 ## 这里是脚本逻辑
 
 echo
+echo `date "+%Y-%m-%d %H:%M:%S"`
 echo 要删除的文件如下
 # 判断是deleteDays功能还是retainNewest功能
 if [ ${shellFunction}X = "deleteDays"X ]
