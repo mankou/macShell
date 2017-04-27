@@ -26,6 +26,8 @@ version=V2-20161015
 
 # 取多行配置示例 如拷备时源路径一行一个
 #./getConfig.sh -f test.config -s SOURCE_START -e SOURCE_END -m
+# 如下将多行内容放到变量里 其以空格为分隔符 因放到变量里了 其会自动删除空白
+# configFileSource=`getConfig.sh -f $configFile -s SOURCE_START -e SOURCE_END -m`
 
 # 取多行配置的个数 有时需要判断多行配置的个数 
 #./getConfig.sh -f test.config -s SOURCE_START -e SOURCE_END -mc
