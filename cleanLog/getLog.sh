@@ -1,5 +1,5 @@
 #!/bin/bash
-# create by m-ning at 20160728
+# create by m-ning at 2017-04-27
 # Desc: 从多个目录中取出日志并压缩成压缩包 常与cleanLog.sh配合使用
 
 author=man003@163.com
@@ -35,30 +35,30 @@ show some examples
 ## 示例2 -f 选项 将源路径通过配置文件传入(常用)
 ## 如下表示从源路径中找文件名包含1214或者1215的文件拷备到target 这里通过配置文件配置要拷备的目录
 ## 其会生成一个tar包 并把拷来的log目录删除(可通过-Z -R 参数决定是否生成tar 是否删除log)
-./getLog.sh -s '1214 1215' -t /Users/mang/Desktop/testShell/target/20170426172816   -f /Users/mang/work/workData/shell/bat-mac/cleanLog/getLog.config 
+./getLog.sh -s '1214 1215' -t /target/20170426172816   -f /test/getLog.config 
 
 ## 示例3 -R选项 不删除log目录
 ## 如下只生成压缩包 但不会删除log目录
-./getLog.sh -R -s '1214 1215' -t /Users/mang/Desktop/testShell/target/20170426172816  /Users/mang/Desktop/testShell/source/cdc  /Users/mang/Desktop/testShell/source/dxp
+./getLog.sh -R -s '1214 1215' -t /target/20170426172816  /source/source1  /source/source2
 
-./getLog.sh -R -s '1214 1215' -R -t /Users/mang/Desktop/testShell/target/20170426172816   -f /Users/mang/work/workData/shell/bat-mac/cleanLog/getLog.config
+./getLog.sh -R -s '1214 1215' -R -t /target/20170426172816   -f /config/getLog.config
 
 ## 示例4 -Z 不压缩
 ## 不压缩log 只拷备log 
 ## 注 如果不压缩 也不会删除log目录
-./getLog.sh -s '1214 1215' -Z -t /Users/mang/Desktop/testShell/target/20170426172816  /Users/mang/Desktop/testShell/source/cdc  /Users/mang/Desktop/testShell/source/dxp
-./getLog.sh -s '1214 1215' -Z -t /Users/mang/Desktop/testShell/target/20170426172816   -f /Users/mang/work/workData/shell/bat-mac/cleanLog/getLog.config
+./getLog.sh -s '1214 1215' -Z -t /target/20170426172816  /source/source1  /source/source2
+./getLog.sh -s '1214 1215' -Z -t /target/20170426172816   -f /config/getLog.config
 
 ## 示例5 -T 选项 设置log目录名
 ## log目录名默认为log 这里也可以修改为其它名称
-./getLog.sh -T log2 -s '1214 1215' -Z -t /Users/mang/Desktop/testShell/target/20170426172816  /Users/mang/Desktop/testShell/source/cdc  /Users/mang/Desktop/testShell/source/dxp
+./getLog.sh -T log2 -s '1214 1215' -Z -t /target/20170426172816  /source/source1  /source/source2
 
 ## 示例6 -D 调试选项(输出版本、运行时间等信息)
-./getLog.sh -D -s '1214 1215' -t /Users/mang/Desktop/testShell/target/20170426172816  /Users/mang/Desktop/testShell/source/cdc  /Users/mang/Desktop/testShell/source/dxp
-./getLog.sh -D -s '1214 1215' -t /Users/mang/Desktop/testShell/target/20170426172816   -f /Users/mang/work/workData/shell/bat-mac/cleanLog/getLog.config
+./getLog.sh -D -s '1214 1215' -t /target/20170426172816  /source/source1  /source/source2
+./getLog.sh -D -s '1214 1215' -t /target/20170426172816   -f /config/getLog.config
 
 ## 示例7 只输出某些调试信息(不想用-D选项 输出全部的调试信息 只输出某些信息)
-./getLog.sh -D -s '1214 1215' -t /Users/mang/Desktop/testShell/target/20170426172816  /Users/mang/Desktop/testShell/source/cdc  /Users/mang/Desktop/testShell/source/dxp version runtime
+./getLog.sh -D -s '1214 1215' -t /target/20170426172816  /source/cdc  /source/dxp version runtime
 
 
 # 其它说明
@@ -142,6 +142,9 @@ TMP_PATH=$SHELL_PATH/tmp
 CALLBACK_MESSAGE=XX
 
 #################自定义变量######################
+# 允许用户通过选项修改的变量放这里
+
+echo 自定义变量区 这里定义允许用户通过选项修改的变量
 
 # 默认目标目录的目录名 如为log则会创建 target/log并把文件拷备到这里
 DEFAULT_TARGET_FILENAME=log
@@ -296,7 +299,7 @@ function fun_copy {
 ###  Main script                     ###
 ###  ------------------------------- ###
 
-# 初始化自己的变量
+# 初始化程序内部的变量
 fun_init_variable
 
 # 解析选项

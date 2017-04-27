@@ -14,6 +14,7 @@ version=V1-20160728
 # usage 
 usage() {
  cat <<EOM
+Desc: 这是一个样例
 Usage: $SHELL_NAME [options]
   -h |    print help usage      打印usage
   -d |    deleteDays            删除N天前文件
@@ -24,17 +25,13 @@ Usage: $SHELL_NAME [options]
   -D |    IS_DEBUG              debug模式 只输出要删除的文件 但实际上不删除
   -M |    CALLBACK_MESSAGE      调用信息 用于记录调用日志
 
-
 show some examples
-
-# 示例1 处理目录的相对路径
-#./getAbsolutePath.sh -d testDir/
-#./getAbsolutePath.sh -d ~/Desktop
+# 示例1 -f 选项 选项说明
 # 详细说明
+#./template.sh -d testDir/
 
-## 示例2 简要说明
-# 脚本命令
-## 详细说明...
+# 输出版本信息
+./template.sh  version runtime
 
 
 # 其它说明
@@ -42,11 +39,6 @@ show some examples
 
 # ==============================exitcode=========================
 ##exit 1 未输入NEW_PATH
-##exit 2 如果即没有指定 -d 参数 也没有指定 -f 参数 则报错 因为我无法判断是目录还是文件
-##exit 3 如果同时指定了 -d -f 参数 也返回错误
-##exit 148 未指定的参数 为什么是148呢 因为404取模256就是148
-##exit 155 参数为空 为什么是155呢 因为当时用手机打某一词是923 取模256 就是155 但923代表什么词 忘记了
-##exit 155 参数为空 为什么是155呢 因为当时用手机打某一词是923 取模256 就是155 但923代表什么词 忘记了
 
 EOM
 exit 0
@@ -72,7 +64,7 @@ IS_OUTPUT_RUNTIME=false
 IS_OUTPUT_VERSION=false
 
 #是否输出解析命令行日志
-IS_OUTPUT_PARSE_PARAMETER=false
+IS_OUTPUT_PARSE_PARAMETER=true
 
 
 #是否创建tmp目录用于存储临时文件
@@ -127,6 +119,12 @@ TMP_PATH=$SHELL_PATH/tmp
 #默认的调用信息 如果不通过-M参数传入调用信息则这里默认为XX
 CALLBACK_MESSAGE=XX
 
+
+#################自定义变量######################
+
+# 默认目标目录的目录名 如为log则会创建 target/log并把文件拷备到这里
+DEFAULT_TARGET_FILENAME=log
+
 #########################如上是配置区域#########################################################
 # 通用的init方法
 function fun_init_common {
@@ -134,6 +132,15 @@ function fun_init_common {
     echo ======================
     echo $datestrFormat
     echo ======================
+
+
+    # 如果在debugg模式下 则可输出版本 参数解析 运行时间等信息 方便调试
+    if [ ${IS_DEBUG}X = "true"X ]
+    then
+        IS_OUTPUT_VERSION=true
+        IS_OUTPUT_PARSE_PARAMETER=true
+        IS_OUTPUT_RUNTIME=true
+    fi
 
 	if [ ${IS_CD_SHELL_PATH}X = "true"X ]
 	then
@@ -163,39 +170,54 @@ function fun_init_common {
 }
 
 
-# 初始化自己的变量
+# 初始化自己的变量(这些变量一般程序内部使用 不需要提供给外部)
 function fun_init_variable {
 	# 注已测试函数中的语句不能为空 必须有一句命令 否则报错 所以我加一句免得出错
 	echo >/dev/null
+
+    echo fun_init_variable 这里定义程序内部使用的变量
+    echo
+
+    # 是否删除拷备 一般我们都会压缩所以拷备的文件就没用了可以删除
+    isDeleteCopy=true
+
+    # 默认压缩
+    isCompress=true
 }
 
 # init方法
 function fun_init {
+	# 注已测试函数中的语句不能为空 必须有一句命令 否则报错 所以我加一句免得出错
+	echo >/dev/null
+
 	fun_init_common
 	#如下写自己的init方法
+   
+    echo
+    echo fun_init 这里写自己的初始化方法 如目录不存在新建 
 
-	## 自定义变量 或者设置默认值
-	#project=tv
-	#codePath=/Users/mang/work/code/osc/frontCode/osc-tv-web-20160623-menu-JR0623
+
 }
 
 # 校验参数
 function fun_checkParameter {
 	# 注已测试函数中的语句不能为空 必须有一句命令 否则报错 所以我加一句免得出错
 	echo >/dev/null
+    
+    echo
+    echo  fun_checkParameter 这里校验参数 如非空 目录是否存在等
+	#if [ -z $CONFIG ]
+	#then
+	#	# 输出错误信息 如下>&2 将输出重定向到标准出错 
+	#	echo [ERR-155] -f 参数值不能为空 >&2
+	#	exit 155
+	#fi
 
-	if [ -z $CONFIG ]
-	then
-		# 输出错误信息 如下>&2 将输出重定向到标准出错 
-		echo [ERR-155] -f 参数值不能为空 >&2
-		exit 155
-	fi
-
-	if [ ! -e $CONFIG ]
-	then
-		echo [ERR-156] 配置文件不存在 $CONFIG >&2
-		exit 156
-	fi
+	#if [ ! -e $CONFIG ]
+	#then
+	#	echo [ERR-156] 配置文件不存在 $CONFIG >&2
+	#	exit 156
+	#fi
 }
 
 # 输出解析选项的日志函数 以减少重复代码
@@ -211,7 +233,7 @@ function fun_OutputOpinion {
 ###  Main script                     ###
 ###  ------------------------------- ###
 
-# 初始化自己的变量
+# 初始化程序内部的变量
 fun_init_variable
 
 # 解析选项
@@ -251,26 +273,36 @@ do
 done
 
 # 解析参数
+paramArrayFilter=()
 shift $[ $OPTIND -1 ]
 PARAMETER_COUNT=1
 # 如下把解析的参数都输出来 方便查看
+# 有时在参数中既有业务相关的东西 如文件路径从参数输入 你又想通过参数输入其它信息来控制程序则可用如下方式把业务上相关的参数取出来
 for param in "$@"
 do
 	case $param in
 		"version" | "VERSION") 
 			IS_OUTPUT_VERSION=true;;
-		"outputRuntime") 
+		"outputRuntime" |"outputruntime"| "runtime") 
 			IS_OUTPUT_RUNTIME=true;;
-		*) ;;
+		*)
+          paramArrayFilter=(${paramArrayFilter[*]} $param) 
+          ;;
 	esac
    PARAMETER_COUNT=$[ $PARAMETER_COUNT+1 ]
 done
 
-# 取参数示例 如下只取出数组的第一个元素
+# 取参数示例 如下示例如何从参数数组中取出某一个元素
 # 注 为什么加() 把其变成数组 如果写成paramArray=$@就不是数组了 你就取不出元素了
-# 注 因为我不会一次把元素取出来 所以用了2句 如本想以 ${$@[0]}
-paramArray=($@);
-#deletePath=${paramArray[0]}
+paramArrayAll=($@);
+#deletePath=${paramArrayAll[0]}
+
+# 遍历参数数组 有时需要遍历数组则可用如下方式
+echo 遍历paramArrayFilter
+for paramFilter in ${paramArrayFilter[@]}
+do
+    echo $paramFilter
+done
 
 
 # 校验参数
