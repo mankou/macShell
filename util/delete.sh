@@ -4,7 +4,7 @@
 ## 支持 删除N天前文件
 ## 支持 只保留最近N个最新的文件
 ## 支持 过滤后缀名 即只有某后缀名的文件才被删除
-## 支持 -l 参数 只显示要删除的文件 而不实际删除 用于调试
+## 支持 调试模式 只显示要删除的文件 而不实际删除 用于调试
 ## 支持 -o 参数 将删除的文件放取指定日志文件中方便其它脚本调用写日志
 
 author=man003@163.com
@@ -17,40 +17,54 @@ version=V1.3-20161208
 	# 因-n参数中 使用的是awk '{print $9}' 这块还没有很好的解决 所以不支持文件名有空格
 	#/Users/mang/AppData/百度云同步盘/mac/bat-mac/util/delete.sh -D -n 1 /Users/mang/Desktop/shell-delete/
 
-#############################使用说明####################################################
+# usage 
+usage() {
+ cat <<EOM
+Usage: $SHELL_NAME [options]
+  -h |    print help usage      打印usage
+  -d |    deleteDays            删除N天前文件
+  -n |    newestCount           保留最新的N个文件
+  -s |    suffix                后缀
+  -r |    isDeleteEmptyDir      删除空目录
+  -o |    delete_log            输出日志 常用于嵌入其它脚本中使用
+  -D |    IS_DEBUG              debug模式 只输出要删除的文件 但实际上不删除
+  -M |    CALLBACK_MESSAGE      调用信息 用于记录调用日志
 
+
+show some examples
 #==============================how to use==============================
-# 让该脚本有可执行权限 chmod +x ./delete.sh
-# 运行该脚本 如下有一些例子
-
 
 # 删除路径最好用绝对路径 相对路径也行 但推荐用绝对路径
 
+# crontab中使用
+# 每天4点删除无用的日志 只保留最近的30个
+0 4 * * * /home/dxp/shell/util/delete.sh  -n 30  /home/dxp/nohup/dxp >>/home/dxp/nohup/delete.dxp.log 2>&1
 
-# 示例说明 如下所有命令都可以加上 -D 开启调试选项
-# 这样只列出程序要删除的文件但不会真的删除 
+
+# 如下所有命令都可以加上 -D 开启调试选项
+# 这样只列出程序要删除的文件但不会真的删除(部署测试时非常有用)
 # ./delete.sh -n2 -D testDir
 
-# 示例1 保留某目录下最新的2个文件或者文件夹 
+# 示例1 -n选项
+# 保留某目录下最新的2个文件或者文件夹  
 # ./delete.sh -n2  testDir/
 
-# 示例2 支持后缀名 保留某目录下 文件名以zip结尾的 2个文件或文件夹
-#./delete.sh -n2 -s zip testDir/
 
-# 示例3 删除某目录下3天前的文件
+# 示例2 -d选项
+# 删除某目录下3天前的文件 
 # 注 这里输入N 即会删除N+1天及之前的文件 也即输入2会删除3天前的文件
 # 注 在这里输入2 即+2 也即大于2天的文件 因都是整数 也就是3天及3天前的文件
 # ./delete.sh -d2 testDir/
 
+# 示例3 -s选项 
+# 支持后缀名 保留某目录下 文件名以zip结尾的 2个文件或文件夹 
+#./delete.sh -n2 -s zip testDir/
 # 示例4 支持后缀名 删除某目录下3天前 并且后缀是zip的 文件
 # ./delete.sh -d2 -s zip testDir/
 
-# 示例5 指定删除日志文件
-# 如下-o 参数指定删除文件日志 因为该脚本输出的日志很多 其它脚本调用时不需要这些日志 只需要知道删除了哪些文件 这里把删除的文件放到指定日志中 用户只需要cat 日志文件即可取出
-#./delete.sh -n2 -l -o /Users/mang/Desktop/delete.log testDir >/dev/null 2>&1
-#cat /Users/mang/Desktop/delete.log
 
-# 示例6 指定是否删除空目录
+# 示例4 -r选项
+# 指定是否删除空目录
 # 如上所有命令都支持-r 选项 表示删除文件后 同时删除空目录
 # 删除2天前的文件 并且删除空目录
 # ./delete.sh -r -d2 testDir/
@@ -61,21 +75,23 @@ version=V1.3-20161208
 	# 注 -D 选项与-r选项同时使用时 虽然不会真的删除空目录 但也不会列出要删除的空目录
 	# 为什么不能列出呢?因为其调用的deleteEmptyDir.sh是通过循环 删除空目录后 再判断空目录个数 是否继续删除 所以其不能列出具体将要删除哪些目录
 
-# 示例7 在其它脚本中使用
+# 示例5 -o选项
+# 在其它脚本中使用 指定删除日志文件
 # 注在其它脚本中调用该脚本时不需要该脚本输出的日志 只想知道删除了哪些文件 如下用-o 参数把删除的文件重定向到某一文件 然后再cat出来可用于写日志等
-# 注 如下2>&1是必须的 否则该脚本会输出rm的命令 因为delete.sh中使用了xargs -t 其输出在错误输出中 20160810试验的
+# 注 如下2>&1是必须的 否则该脚本会输出rm的命令 因为delete.sh中使用了xargs -t 
+
 # 如下三句是代码示例
 #delete.sh -n3 -o $localPath/lastDelete.log -s $suffix $localPath >/dev/null 2>&1
 # 如下把要删除的文件输出到控制台 方便重定向写日志
 #cat $localPath/lastDelete.log
 
-
-
-
 # ==============================exitcode=========================
 ## 148 未知选项 为什么起148呢 因为148+256=404
 ## 1 删除路径为空
 
+EOM
+exit 0
+}
 
 # ==============================脚本技巧点========================
 ## 同时处理命令行选项和参数
@@ -110,7 +126,7 @@ IS_OUTPUT_VERSION=false
 
 #时间戳
 datestr=`date "+%Y%m%d%H%M%S"`
-
+datestrFormat=`date "+%Y-%m-%d %H:%M:%S"`
 
 # 用于获得脚本所在路径的，因为如果你把该脚本加到PATH中然后在其它路径中使用命令 wcm.sh 则使用默认配置文件时会出错
 # 注 这里cd pwd是有道理的，如果不加 你有可能获取到 . 
@@ -137,14 +153,14 @@ do
 	fi
 done
 
-
-# 如果tmp目录不存在 则新建
-TMP_PATH=$BASE_PATH/tmp
-
-
 #########################如上是配置区域#########################################################
 # 通用的init方法
 function fun_init_common {
+    echo
+    echo ======================
+    echo $datestrFormat
+    echo ======================
+
 	if [ ${IS_OUTPUT_RUNTIME}X = "true"X ]
 	then
 		#echo start at `date -d today +"%Y-%m-%d %T"`====================
@@ -169,6 +185,10 @@ function fun_init_variable {
 
 	# 是否删除临时文件 true 表示删除 false表示不删除
 	IS_DELETE_TEMP=false
+	IS_CLEAN_TEMP=true
+
+    # 如果tmp目录不存在 则新建
+    TMP_PATH=$BASE_PATH/tmp
 
 	#定义临时文件路径
 	lsTmp=$TMP_PATH/${SHELL_NAME}_ls.tmp
@@ -215,13 +235,19 @@ function fun_deleteEmptyDir {
 	fi
 }
 
+
+###  ------------------------------- ###
+###  Main script                     ###
+###  ------------------------------- ###
+
+
 # 初始化变量
 fun_init_variable
 
 # 将命令行参数放到变量里 以后用 CLP表示 Command line parameters
 CLP=$*
 #echo 正在解析命令行选项 $*
-while getopts d:n:s:o:rDVM: opt
+while getopts d:n:s:o:rhDVM: opt
 do
   case "$opt" in
      d) fun_OutputOpinion $opt $OPTARG
@@ -239,12 +265,16 @@ do
 		 # 将delete_log处理成绝对路径 并且如果父级目录不存在则创建
 		delete_log=`getAbsolutePath.sh -fc $OPTARG`
 		echo [parse parameter]处理相对路径后 $delete_log;;
+     h) fun_OutputOpinion $opt $OPTARG
+         usage
+         ;;
      D) fun_OutputOpinion $opt $OPTARG
 		IS_DEBUG=true;;
      M) fun_OutputOpinion $opt $OPTARG
 		# 用于写日志用
 		CALLBACK_MESSAGE=$OPTARG;;
      *) fun_OutputOpinion $opt $OPTARG
+         usage
 		exit 148;;
   esac
 done
@@ -279,8 +309,6 @@ fun_checkParameter
 
 ## 这里是脚本逻辑
 
-echo
-echo `date "+%Y-%m-%d %H:%M:%S"`
 echo 要删除的文件如下
 # 判断是deleteDays功能还是retainNewest功能
 if [ ${shellFunction}X = "deleteDays"X ]
@@ -316,9 +344,10 @@ then
 	# 注 如下sed -n "" 必须是双引号 不能是单引号 因为你里面引用了变量
 	# 注 如下使用tee接t型管 是为了把删除的数据输出的标准输出中
 	sed -n "$[newestCount+1],\$p" $lsAwkTmp|tee $deleteTmp
+    echo
 
-	# 如果输入-l参数 则只列出要删除的内容 不实际删除 免得删除错了
-	# 这里如果没有输入-l参数 则真的删除
+	# 如果输入-D参数 则只列出要删除的内容 不实际删除 免得删除错了
+	# 这里如果没有输入-D参数 则真的删除
 	if [ ! ${IS_DEBUG}X = "true"X ]
 	then
 		#cat $BASE_PATH/delete.temp
@@ -347,10 +376,17 @@ if [ ! -z $delete_log ]
 then
 	cat $deleteTmp>$delete_log
 fi
+
 # 判断是否删除临时文件
 if [ ${IS_DELETE_TEMP}X = "true"X ]
 then
-	rm -rf $deleteTmp $lsTmp
+	rm -rf $TMP_PATH
+else
+    # 如果不删除临时文件夹 则判断是否要清空临时文件夹
+    if [ ${IS_CLEAN_TEMP}X = "true"X ]
+    then
+        rm -rf $TMP_PATH/*
+    fi
 fi
 
 # 输出脚本运行时间信息

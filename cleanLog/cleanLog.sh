@@ -6,6 +6,10 @@
 
 
 
+author=man003@163.com
+version=V1.0-20170426
+
+
 # 脚本当前路径
 SHELL_PATH=$(cd $(dirname "$0");pwd)
 SHELL_NAME=`basename $0`

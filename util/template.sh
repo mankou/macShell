@@ -11,12 +11,21 @@ version=V1-20160728
 # TODOXXX
 	# 说明
 
+# usage 
+usage() {
+ cat <<EOM
+Usage: $SHELL_NAME [options]
+  -h |    print help usage      打印usage
+  -d |    deleteDays            删除N天前文件
+  -n |    newestCount           保留最新的N个文件
+  -s |    suffix                后缀
+  -r |    isDeleteEmptyDir      删除空目录
+  -o |    delete_log            输出日志 常用于嵌入其它脚本中使用
+  -D |    IS_DEBUG              debug模式 只输出要删除的文件 但实际上不删除
+  -M |    CALLBACK_MESSAGE      调用信息 用于记录调用日志
 
-#############################使用说明####################################################
 
-#==============================how to use==============================
-# 让该脚本有可执行权限 chmod +x ./oracleBak.sh
-# 运行该脚本 ./oracleBak.sh
+show some examples
 
 # 示例1 处理目录的相对路径
 #./getAbsolutePath.sh -d testDir/
@@ -39,6 +48,9 @@ version=V1-20160728
 ##exit 155 参数为空 为什么是155呢 因为当时用手机打某一词是923 取模256 就是155 但923代表什么词 忘记了
 ##exit 155 参数为空 为什么是155呢 因为当时用手机打某一词是923 取模256 就是155 但923代表什么词 忘记了
 
+EOM
+exit 0
+}
 
 # ==============================脚本技巧点========================
 
@@ -72,25 +84,20 @@ IS_CD_SHELL_PATH=false
 
 #时间戳
 datestr=`date "+%Y%m%d%H%M%S"`
+datestrFormat=`date "+%Y-%m-%d %H:%M:%S"`
 
 # 当前路径
 CURRENT_PATH=`pwd`
-
-# 用于获得脚本所在路径的，因为如果你把该脚本加到PATH中然后在其它路径中使用命令 wcm.sh 则使用默认配置文件时会出错
-# 注 这里cd pwd是有道理的，如果不加 你有可能获取到 . 
-# 最好切换到脚本当前目录下 因为有时以crontab中运行有可能不动
-# 如你经常将配置文件放在sh同一级目录下  脚本 -f con.config 有可能出错
-# 已经测试虽然下面的命令中有cd操作 但我发现其不会改变当前路径
-SHELL_PATH=$(cd $(dirname "$0");pwd)
 
 # 用于获得脚本所在路径的
 # 因为如果你把该脚本加到PATH中然后在其它路径中使用命令 wcm.sh 则使用默认配置文件时会出错
 # 注 这里cd pwd是有道理的，如果不加 你有可能获取到 . 
 # 当你使用 脚本名或者绝对路径调用脚本时$0是绝对路径 当你使用相对路径调用脚本时$0是相对路径
 SHELL_PATH=$(cd $(dirname "$0");pwd)
-# 最好切换到脚本当前目录下 因为有时以crontab中运行有可能不动
-# 如你经常将配置文件放在sh同一级目录下  脚本 -f con.config 有可能出错
-cd $SHELL_PATH
+if [ ${IS_CD_SHELL_PATH}X = "true"X ]
+then
+	cd $SHELL_PATH
+fi
 
 # 获取脚本名
 SHELL_NAME=`basename $0`
@@ -123,6 +130,11 @@ CALLBACK_MESSAGE=XX
 #########################如上是配置区域#########################################################
 # 通用的init方法
 function fun_init_common {
+    echo
+    echo ======================
+    echo $datestrFormat
+    echo ======================
+
 	if [ ${IS_CD_SHELL_PATH}X = "true"X ]
 	then
 		cd $SHELL_PATH
@@ -195,6 +207,10 @@ function fun_OutputOpinion {
 }
 
 
+###  ------------------------------- ###
+###  Main script                     ###
+###  ------------------------------- ###
+
 # 初始化自己的变量
 fun_init_variable
 
@@ -206,26 +222,30 @@ fi
 # 将命令行参数放到变量里 以后用 CLP表示 Command line parameters
 CLP=$*
 #如果某个选项字母后面要加参数则在后面加一冒号：
-while getopts d:n:c:s:lDM: opt
+while getopts d:n:c:s:lhDM: opt
 do
   case "$opt" in
-     d) fun_OutputOpinion $opt $OPTARG
+     d) fun_OutputOpinion $opt "$OPTARG"
 	 	deleteDays=$OPTARG	
 		shellFunction="deleteDays";;
 		# 注 最后一句必须加两个分号
-     n) fun_OutputOpinion $opt $OPTARG
+     n) fun_OutputOpinion $opt "$OPTARG"
 	    newestparameterCount=$OPTARG
 		shellFunction="retainNewest";;
-     s) fun_OutputOpinion $opt $OPTARG
+     s) fun_OutputOpinion $opt "$OPTARG"
 		suffix=$OPTARG;;
-     l) fun_OutputOpinion $opt $OPTARG
+     l) fun_OutputOpinion $opt "$OPTARG"
 		is_list="true";;
-     D) fun_OutputOpinion $opt $OPTARG
+     h) fun_OutputOpinion $opt "$OPTARG"
+         usage
+         ;;
+     D) fun_OutputOpinion $opt "$OPTARG"
 		#是否debug模式 debug模式下会把执行的exp命令输出来方便测试
 		IS_DEBUG=true;;
-     M) fun_OutputOpinion $opt $OPTARG
+     M) fun_OutputOpinion $opt "$OPTARG"
 		CALLBACK_MESSAGE=$OPTARG;;
-     *) fun_OutputOpinion $opt $OPTARG
+     *) fun_OutputOpinion $opt "$OPTARG"
+         usage
 		exit 148;;
   esac
 done
