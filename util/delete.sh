@@ -20,6 +20,7 @@ version=V1.3-20161208
 # usage 
 usage() {
  cat <<EOM
+Desc:删除某目录下N天前文件或者只保留最近N个最新的文件
 Usage: $SHELL_NAME [options]
   -h |    print help usage      打印usage
   -d |    deleteDays            删除N天前文件
@@ -213,6 +214,9 @@ function fun_checkParameter {
 		deletePath=`getAbsolutePath.sh -fc $deletePath`
 		echo [parse parameter]处理相对路径后 $deletePath
 	fi
+
+    [ ! -e $deletePath ] && echo [warn]目录不存在,直接退出 $deletePath && exit 2
+
 }
 
 # 输出解析选项的日志函数 以减少重复代码

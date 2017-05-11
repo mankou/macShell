@@ -3,7 +3,7 @@
 # Desc: 从多个目录中取出日志并压缩成压缩包 常与cleanLog.sh配合使用
 
 author=man003@163.com
-version=V1-2017-04-27
+version=V1-20170501
 
 #==============================TODO==============================
 # TODOXXX
@@ -12,13 +12,14 @@ version=V1-2017-04-27
 # usage 
 usage() {
  cat <<EOM
-Desc: 从多个目录中取出日志并压缩成压缩包 常与cleanLog.sh配合使用
+Desc: 从多个目录中拷备指定日志到目标目录,并打成压缩包,以达到快速从服务器上取日志的目的,常与cleanLog.sh配合使用
 Usage: $SHELL_NAME [options]
   -h |    print help usage      打印usage
   -s |    fileNameStr           要查找的文件名
   -t |    target                目标路径
   -T |    DEFAULT_TARGET_FILENAME   目标路径目录名 默认名是log 可通过该参数修改
-  -f |    configFile            配置文件路径
+  -f |    configFile            配置文件路径(路径写在配置文件中)
+  -F |    shoftConfigFile       文件简写模式的配置文件路径
   -R |    removeTarget          是否删除目标目录
   -Z |    isNotCompress         不压缩(默认压缩 可通过该选项指定不压缩)
   -D |    IS_DEBUG              debug模式(输出一些调试日志如版本 运行时间等)
@@ -28,40 +29,46 @@ Usage: $SHELL_NAME [options]
 show some examples
 
 ## 示例1  将源路径通过命令行参数传入(常用)
-## 如下表示从源路径中找文件名包含1214或者1215的文件拷备到target 这里通过参数传入要拷备的目录 
+## 如下表示从源路径中找文件名包含1214或者1215的文件拷备到target/log 这里通过传入的参数决定要哪些拷备目录
 ## 其会生成一个tar包 并把拷来的log目录删除(可通过-Z -R 参数决定是否生成tar 是否删除log)
-./getLog.sh -s '1214 1215' -t /Users/mang/Desktop/testShell/target/20170426172816  /Users/mang/Desktop/testShell/source/cdc  /Users/mang/Desktop/testShell/source/dxp
+./getLog.sh -s '1214 1215' -t /home/user/logpickup/20170426172816  /home/user/nohup/source1 /home/user/nohup/source2
 
 ## 示例2 -f 选项 将源路径通过配置文件传入(常用)
-## 如下表示从源路径中找文件名包含1214或者1215的文件拷备到target 这里通过配置文件配置要拷备的目录
+## 如下表示从源路径中找文件名包含1214或者1215的文件拷备到target 这里通过配置文件配置决定要拷备哪些目录
 ## 其会生成一个tar包 并把拷来的log目录删除(可通过-Z -R 参数决定是否生成tar 是否删除log)
-./getLog.sh -s '1214 1215' -t /target/20170426172816   -f /test/getLog.config 
+./getLog.sh -s '1214 1215' -t /home/user/logpickup/20170426172816   -f /home/user/shell/cleanLog/getLog_file.config 
 
-## 示例3 -R选项 不删除log目录
+## 示例3 -F 选项 将源路径和简写名写到配置文件 并且将简写名通过参数传入决定具体要拷备哪些路径(常用)
+./getLog.sh -s '1214 1215' -t /home/user/logpickup/20170426172816   -F /home/user/shell/cleanLog/getLog_shortFile.config  source1 source2
+
+
+## 示例4 -R选项 不删除log目录
 ## 如下只生成压缩包 但不会删除log目录
-./getLog.sh -R -s '1214 1215' -t /target/20170426172816  /source/source1  /source/source2
+./getLog.sh -R -s '1214 1215' -t /home/user/logpickup/20170426172816  /home/user/nohup/source1 /home/user/nohup/source2
 
-./getLog.sh -R -s '1214 1215' -R -t /target/20170426172816   -f /config/getLog.config
+./getLog.sh -R -s '1214 1215' -R -t /home/user/logpickup/20170426172816   -f /home/user/shell/cleanLog/getLog_file.config
 
-## 示例4 -Z 不压缩
+## 示例5 -Z 不压缩
 ## 不压缩log 只拷备log 
 ## 注 如果不压缩 也不会删除log目录
-./getLog.sh -s '1214 1215' -Z -t /target/20170426172816  /source/source1  /source/source2
-./getLog.sh -s '1214 1215' -Z -t /target/20170426172816   -f /config/getLog.config
+./getLog.sh -s '1214 1215' -Z -t /home/user/logpickup/20170426172816  /home/user/nohup/source1 /home/user/nohup/source2
+./getLog.sh -s '1214 1215' -Z -t /home/user/logpickup/20170426172816   -f /config/getLog.config
 
-## 示例5 -T 选项 设置log目录名
+## 示例6 -T 选项 设置log目录名
 ## log目录名默认为log 这里也可以修改为其它名称
-./getLog.sh -T log2 -s '1214 1215' -Z -t /target/20170426172816  /source/source1  /source/source2
+./getLog.sh -T log2 -s '1214 1215' -Z -t /home/user/logpickup/20170426172816  /home/user/nohup/source1  /home/user/nohup/source2
 
-## 示例6 -D 调试选项(输出版本、运行时间等信息)
-./getLog.sh -D -s '1214 1215' -t /target/20170426172816  /source/source1  /source/source2
-./getLog.sh -D -s '1214 1215' -t /target/20170426172816   -f /config/getLog.config
+## 示例7 -D 调试选项(输出版本、运行时间等信息)
+./getLog.sh -D -s '1214 1215' -t /home/user/logpickup/20170426172816  /home/user/nohup/source1  /home/user/nohup/source2
+./getLog.sh -D -s '1214 1215' -t /home/user/logpickup/20170426172816   -f /config/getLog_file.config
 
-## 示例7 只输出某些调试信息(不想用-D选项 输出全部的调试信息 只输出某些信息)
-./getLog.sh -D -s '1214 1215' -t /target/20170426172816  /source/cdc  /source/dxp version runtime
+## 示例8 只输出某些调试信息(不想用-D选项 输出全部的调试信息 只输出某些信息)
+./getLog.sh -D -s '1214 1215' -t /home/user/logpickup/20170426172816  /home/user/nohup/source1  /home/user/nohup/source2 version runtime
 
 
 # 其它说明
+# 最好保证源目录中的日志名不一样 否则后拷备的文件会覆盖先前拷备的文件 所以一般与cleanLog配合使用 以免日志文件名重复
+# 为什么该脚本不对拷备的文件加前缀以区分 因为不好加 拷备的源路径有好几个 每个源路径都需要有一个前缀 配置麻烦 取配置也麻烦
 
 # ==============================exitcode=========================
 
@@ -144,10 +151,12 @@ CALLBACK_MESSAGE=XX
 #################自定义变量######################
 # 允许用户通过选项修改的变量放这里
 
-echo 自定义变量区 这里定义允许用户通过选项修改的变量
-
 # 默认目标目录的目录名 如为log则会创建 target/log并把文件拷备到这里
 DEFAULT_TARGET_FILENAME=log
+
+
+# 脚本默认功能
+SHELL_FUNCTION=argument
 
 
 #########################如上是配置区域#########################################################
@@ -219,23 +228,26 @@ function fun_init {
         mkdir -p $realTarget
     fi
 
-    #从configFile中取出source
-    if [ ! -z $configFile ]
+    # 判断功能模式 
+    if [ ${SHELL_FUNCTION}X = "argument"X ]
     then
-        configFileSource=`getConfig.sh -f $configFile -s SOURCE_START -e SOURCE_END -m`
-    fi
-
-    # 取出的配置文件如下
-    if [ ! -z $configFile ]
-    then
-        #echo 不带引号的
-        #echo $configFileSource
-
-        #echo "带引号的"
-        #echo "$configFileSource"
-        sourceArray=($configFileSource);
-    else
+        echo "命令行模式"
         sourceArray=(${paramArrayFilter[*]})
+    elif [ ${SHELL_FUNCTION}X = "file"X ]
+    then
+        echo "一般文件模式"
+        configFileSource=`getConfig.sh -f $configFile -s CONFIG_START -e CONFIG_END -m`
+        sourceArray=($configFileSource);
+    elif [ ${SHELL_FUNCTION}X = "shortFile"X ]
+    then
+        echo "文件简写模式"
+        # 如果是-F 选项 则依次循环paramArrayFilter 从配置文件中取出路径放在数组中
+        for para in ${paramArrayFilter[*]}
+        do
+            # 从配置文件里取配置
+            fromPath=`getConfig.sh -f $configFile -s CONFIG_START -e CONFIG_END -i $param`
+            sourceArray=(${sourceArray[*]} $fromPath) 
+        done
     fi
 }
 
@@ -310,7 +322,7 @@ fi
 # 将命令行参数放到变量里 以后用 CLP表示 Command line parameters
 CLP=$*
 #如果某个选项字母后面要加参数则在后面加一冒号：
-while getopts s:t:T:f:RZhDM: opt
+while getopts s:t:T:f:F:RZhDM: opt
 do
   case "$opt" in
      s) fun_OutputOpinion $opt "$OPTARG"
@@ -324,6 +336,11 @@ do
         DEFAULT_TARGET_FILENAME=$OPTARG
          ;;
      f) fun_OutputOpinion $opt $OPTARG
+        SHELL_FUNCTION=file
+	    configFile=$OPTARG
+        ;;
+     F) fun_OutputOpinion $opt $OPTARG
+        SHELL_FUNCTION=shortFile
 	    configFile=$OPTARG
         ;;
      R) fun_OutputOpinion $opt $OPTARG
@@ -398,8 +415,19 @@ do
     fi
 done
 
+
+# 判断是否拷备到文件
+fileCount=`ls $realTarget|wc -l` 
+if [ $fileCount -gt 0 ]
+then
+    isCopyedFile=true
+else
+    echo "[warn]未拷备到文件"
+    isCopyedFile=false
+fi
+
 # 压缩
-if [ ${isCompress}X = "true"X ]
+if [ ${isCompress}X = "true"X ] && [ ${isCopyedFile}X = "true"X ]
 then
     tarName=`basename $target`.tar.gz
     echo
@@ -408,7 +436,7 @@ then
 fi
 
 # 压缩后拷备的文件就不用了 可以判断是否删除
-if [ ${isDeleteCopy}X = "true"X ]
+if [ ${isDeleteCopy}X = "true"X ] && [ ${isCopyedFile}X = "true"X ]
 then
     echo
     echo 删除 $realTarget
