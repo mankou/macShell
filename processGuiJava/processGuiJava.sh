@@ -1,18 +1,17 @@
 #!/bin/bash
-# 简介 shell模板
-# 描述 原来有一个shell模板 但越发的复杂 现在想要一个简单的模板 所以这里又开发一个新的模板
+# 简介 处理gui反编译后java文件
+# 描述 用gui反编译后的java文件 保存后是有注释的 该脚本用于去除注释
 # 运行方式
 # chmod +s *.sh
-# ./template2.sh
+# ./processGuiJava.sh
 
 author=man003@163.com
-version=V1.0-20170526
+version=V1.0-20170601
 
 ###########命名规则说明#############
 # 大写_大写 通用的变量 如脚本路径 脚本名  
 # 小写_小写 工程定义的可修改的变量 这些变量可通过配置文件修改
 # 峰驼写法  脚本中自己的使用的变量 脚本内部使用的变量
-
 
 #################定义系统变量##################
 
@@ -42,15 +41,9 @@ done
 
 
 ###############定义脚本相关变量###################
-# 原包名
-package_old=mang.demo.springmvc
 
 # 基准路径
 base_path=$SHELL_PATH
-
-# 新包名
-package_new=com.mtest
-
 ################定义自己的函数#####################
 
 
@@ -69,14 +62,35 @@ then
 
 fi
 
-echo 新工程名  $project_name_new 
-echo 新groupID $group_id_new
-echo 新包名    $package_new
+echo 基准路径  $base_path
 echo
 
 
 #############定义根据上述变量计算所得的变量##############
+echo 正在处理 行首的注释
+# 样例如下
+# /*    */  java代码
+# sed 命令解释
+# 如下sed -ig 表示在原文件上操作 因在mac上不支持-i选项 所以用-ig 选项 其会把原文件以g结尾 所以下一句再删除
+# sed 命令中用#做为分隔符 因为我替换的文本中有/ 所以用#比较好
+# \*.*\*  其中\*是转义 .* 表示任意字符  合起来匹配 /*   */的文本
+find $base_path -name "*.java" |xargs sed -ig "s#/\*.*\*/##g"
+find $base_path -name "*.javag"|xargs -n5 rm -rf 
 
+echo 正在处理 文件末尾的注释
+# 样例如下
+#/* Location:              
+# * Java compiler version: 7 (51.0)
+# * JD-Core Version:       0.7.1
+# */
+for line in `find $base_path -name "*.java"`
+do
+    # 命令解释
+    # -v ^\/\*  其中\/ 和\* 表示转义  合起来表示删除/*开头的行
+    # -v '^\s*\*'  \s*表示空白字符重复n次 \*表示转义 合起来表示删除包含  以空白字符开头到* 这样的行
+    cat $line|grep -v '^\/\*'|grep -v '^\s*\*'>$line.tmp
+    mv $line.tmp $line
+done
 
 
 echo

@@ -96,6 +96,9 @@ SHELL_NAME=`basename $0`
 # 获取脚本所在父路径
 PARENT_PATH=`dirname $SHELL_PATH`;
 
+# 脚本不包括后缀的文件名 如xx.sh 则文件名为 xx
+SHELL_NAME0=${SHELL_NAME%.*}
+
 # 设置环境变量
 PATH=$PATH:$PARENT_PATH/util/;
 

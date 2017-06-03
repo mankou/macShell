@@ -19,6 +19,8 @@ version=V1.0-20170601
 SHELL_PATH=$(cd $(dirname "$0");pwd)
 SHELL_NAME=`basename $0`
 PARENT_PATH=`dirname $SHELL_PATH`;
+# 脚本不包括后缀的文件名 如xx.sh 则文件名为 xx
+SHELL_NAME0=${SHELL_NAME%.*}
 cd $PARENT_PATH
 
 # 设置环境变量
@@ -58,9 +60,7 @@ package_new=com.mtest
 ###  ------------------------------- ###
 
 # 获取配置文件覆盖变量默认值
-# TODO 研究获取脚本名称不要后缀
-#initConfig=${SHELL_PATH}/${SHELL_NAME}.config
-initConfig=${SHELL_PATH}/modifyPackage.config
+initConfig=${SHELL_PATH}/${SHELL_NAME0}.config
 if [ -f $initConfig ]
 then
     echo 采用 ${SHELL_NAME}.config 覆盖默认配置
@@ -105,8 +105,8 @@ echo
 
 # 正在处理 java文件里的包名路径
 echo 正在处理 java文件包路径
-find . -name "*.java" |xargs sed -ig "s/$package_old/$package_new/g"
-find . -name "*.javag" |xargs -n5 rm -rf
+find $base_path -name "*.java" |xargs sed -ig "s/$package_old/$package_new/g"
+find $base_path -name "*.javag" |xargs -n5 rm -rf
 
 
 echo
