@@ -297,11 +297,11 @@ EOF
 		bye
 EOF
 
-	echo 保留最近3个版本的文件 如下是删除的文件
+	echo 保留最近${deleteDays}个版本的文件 如下是删除的文件
 	#echo "delete.sh -n3 -o $localPath/lastDelete.log -s $suffix $localPath >/dev/null"
 	#delete.sh -n3 -o $localPath/lastDelete.log -s $suffix $localPath >/dev/null 2>&1
 	# 如下使用$PARENT_PATH 是为了以后换网盘路径不影响这里
-	delete.sh -M "$SHELL_NAME-$CALLBACK_MESSAGE" -n3 -o $localPath/lastDelete.log -s $suffix $localPath >>$PARENT_PATH/util/log/delete.sh_autoGetFileFromFTP.log 2>&1
+	delete.sh -M "$SHELL_NAME-$CALLBACK_MESSAGE" -n${deleteDays} -o $localPath/lastDelete.log -s $suffix $localPath >>$PARENT_PATH/util/log/delete.sh_autoGetFileFromFTP.log 2>&1
 
 	# 如下把要删除的文件输出到控制台 方便重定向写日志
 	cat $localPath/lastDelete.log

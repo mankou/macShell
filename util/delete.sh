@@ -320,6 +320,8 @@ then
 	#echo "find $localPath -name "*$suffix" -mtime +"$deleteDays"|xargs ls -l";
 	# 注不要写成 find . -name *.* 这样只能查temp.out这样的文件 但查不出temp这样的文件
 	# 如下find -print0|xargs -0 是为了处理文件名有空格的文件
+    # TODO-BUG  如果find未查出文件 则会传一个空给ls -l 则其会列出所有的文件
+    # 虽然实际并没有删除文件 因为 rm -rf 不加参数什么也删除不了,但写的日志不对
 	find $deletePath -name "*$suffix" -mtime +"$deleteDays" -print0|xargs -0 ls -l|tee $deleteTmp;
 
 	# 如果输入-l参数 则只列出要删除的内容 不实际删除 免得删除错了
