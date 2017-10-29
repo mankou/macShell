@@ -1,6 +1,9 @@
 #!/bin/bash
 # create by m-ning at 20171028
-# desc pingsh.sh的配套分析脚本 用于从ping包日志中分析出哪些时间有丢包现象
+# desc 这是一个模板脚本 20171028来自pinga.sh
+# 背景
+    # 因template.sh 太复杂 后来其于source 文件的技巧开发了template2.sh通过默认配置文件修改变量值
+    # 但template2.sh 太简单 所以开发了template3.sh 既能通过命令行参数修改变量值 也能通过默认配置文件修改变量值 并且删除了template.sh中一些认为没用的脚本
 
 author=man003@163.com
 version=1.0-20171028
@@ -12,33 +15,31 @@ version=1.0-20171028
 # usage 
 usage() {
  cat <<EOM
-Desc: pingsh.sh的配套分析脚本 用于从ping包日志中分析出哪些时间有丢包现象
-Usage: $SHELL_NAME [options] args
+Desc: 这是一个样例
+Usage: $SHELL_NAME [options]
   -h |    print help usage      打印usage
-  -t |    target_file_path      结果文件存放路径
+  -d |    deleteDays            删除N天前文件
+  -n |    newestCount           保留最新的N个文件
   -s |    suffix                后缀
+  -r |    isDeleteEmptyDir      删除空目录
+  -o |    delete_log            输出日志 常用于嵌入其它脚本中使用
+  -D |    IS_DEBUG              debug模式 只输出要删除的文件 但实际上不删除
+  -M |    CALLBACK_MESSAGE      调用信息 用于记录调用日志
 
 show some examples
-# 示例1 分析dir1 dir2目录下ping包日志文件以及file1哪些时间有丢包现象
-./pinga.sh dir1 dir2 file1
-# 注1 关于结果文件 
-    ## 这里没有指定结果文件存放路径,则走默认值.默认路径为:当前路径/pinga.result
-    ## 可通过-t 选项改变结果文件存放路径
-# 注2 关于日志文件后缀
-    ## 这里没有指定后缀 则默认为*.log 即只查找 *.log 这样的文件
-    ## 可通过-s 选项 修改后缀
-# 注3 关于分析哪些目录
-    ## 在命令行参数中可以指定目录，也可以指定文件 
-    ## 如果是目录则会查找该目录下所有后缀为*.log的文件 进行分析
-    ## 如果是文件则直接分析该文件
+# 示例1 -f 选项 选项说明
+# 详细说明
+#./template.sh -d testDir/
+
+# 输出版本信息
+./template.sh  version runtime
 
 
-# 示例2 指定结果文件存放路径
-./pinga.sh -t targetPath dir1 dir2
-# 注 则这里结果文件会存放在指定的路径 而不是默认的路径
+# 其它说明
+## 如果传入的是绝对路径则返回的也是绝对路径
 
 # ==============================exitcode=========================
-
+##exit 1 未输入NEW_PATH
 EOM
 exit 0
 }
@@ -266,70 +267,23 @@ paramArrayAll=($@);
 #deletePath=${paramArrayAll[0]}
 
 
-# 如果目标文件所在目录不存在则新建 如果目标文件存在则删除
-targetParentPath=`dirname $target_file_path`
-[ ! -d $targetParentPath ] && mkdir $targetParentPath
-[ -e $target_file_path ] && rm -rf $target_file_path
-
 # 遍历参数数组 有时需要遍历数组则可用如下方式
 # 如下整理出需要分析哪些文件 将文件路径存储在 timpFile1中
-[ ! ${IS_SILENT}X = "true"X ] && echo **阶段1:正在搜索要分析的日志文件 $suffix
-tmpFile1=$TMP_PATH/$SHELL_NAME0.tmp1
-[ -e $tmpFile1 ] && rm -rf $tmpFile1
 for paramFilter in ${paramArrayFilter[@]}
 do
-    if [ -d $paramFilter ]
-    then
-        find $paramFilter -name $suffix >>$tmpFile1
-    elif [ -f $paramFilter ]
-    then
-        echo $paramFilter>>$tmpFile1 
-    fi
+    echo $paramFilter
 done
 
 
-# 如下找出丢包率不是0%的行 重定向到tmpFile2中
-[ ! ${IS_SILENT}X = "true"X ] && echo **阶段2:找出丢包率不是0%的行
-tmpFile2=$TMP_PATH/$SHELL_NAME0.tmp2
-[ -e $tmpFile2 ] && rm -rf $tmpFile2
-cat $tmpFile1 |while read line
-do
-    grep -Hn "packet loss" $line |grep -v " 0% " >>$tmpFile2
-done
+#####################下面写脚本逻辑#####################################
+echo
+echo 一般在在这里写脚本逻辑
+echo 但有时需要用到命令行参数 所以在命令行参数阶段脚本逻辑就开始了
 
 
-# 如下进一步规范数据 删除数据中的无用空格
-[ ! ${IS_SILENT}X = "true"X ] && echo **阶段3:规范数据
-tmpFile3=$TMP_PATH/$SHELL_NAME0.tmp3
-[ -e $tmpFile3 ] && rm -rf $tmpFile3
-sed 's/, /,/g' $tmpFile2 >>$tmpFile3
 
+#####################上面写脚本逻辑#####################################
 
-# 如下根据上面找到的文件名及行号取出时间 并将最终的内容保存到结果文件中
-[ ! ${IS_SILENT}X = "true"X ] && echo **阶段4:提取时间
-cat $tmpFile3 | while read line
-do
-     #取出文件名
-     filename=`echo $line|cut -d: -f1`; 
-     #取出行号
-     lineEndNum=`echo $line|cut -d: -f2` 
-     #因为一般丢失率那行最多往上60多行就能找到时间所以这里-70
-     lineStartNum=$[$lineEndNum-70]; 
-     # 取出当前时间那一行 其格式为2017-10-27 05:34:01
-     date_time=`sed -n "$lineStartNum,$lineEndNum p" $filename |grep $pattern_line|tail -n 1|awk '{print $2,$3}'`;
-     date=`echo $date_time|awk '{print $1}'` 
-     time=`echo $date_time|awk '{print $2}'`
-     
-     if [ ${is_short_file_name}X = "true"X ]
-     then
-         shortFileName=`basename $filename`;
-         #echo $line|awk -v shortFileName=$shortFileName -v date=${date} -v time=${time} 'BEGIN{FS=":";OFS=","} {print date " " time,shortFileName,$2,$3}'>>$target_file_path
-         echo $line|awk -v shortFileName=$shortFileName -v date=${date} -v time=${time} 'BEGIN{FS=":";OFS=","} {print date " " time,shortFileName,$2,$3}' |tee -a $target_file_path
-     else
-         #echo $time:$line >>$target_file_path
-         echo $time:$line |tee -a $target_file_path
-     fi
-done
 
 [ ${IS_DELETE_TMP}X = "true"X ] && rm -rf $TMP_PATH
 
