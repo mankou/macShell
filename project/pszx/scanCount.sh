@@ -1,5 +1,5 @@
 #!/bin/bash
-# 简介 配送割接-辅助统计scanCount的脚本
+# 简介 PS割接-辅助统计scanCount的脚本
 # 运行方式
 # chmod +x *.sh
 # ./scanCount.sh

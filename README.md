@@ -12,8 +12,9 @@
 * 用于拷备文件使用
 ## oracleBak oracle备份脚本
 * 用于备份oracle使用
-## releaseLS 一键部署前端脚本
-* 用于LS项目一键部署前端工程
+## pingShell ping包日志相关脚本
+* pingsh.sh ping包日志脚本
+* pinga.sh ping包日志分析脚本
 ## util 工具类脚本
 * delete.sh 删除脚本 可删除N天前的数据 和 保留最近N个文件的功能
 * getAbsolutePath.sh 将相对路径处理成绝对路径的脚本
