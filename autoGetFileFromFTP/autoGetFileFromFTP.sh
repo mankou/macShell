@@ -6,23 +6,37 @@
 
 
 author=man003@163.com
-version=V7-20161130
+version=V7-20171110
 
 # =============================how to use==============================
+usage(){
+cat <<EOM
+Desc: 从ftp上下载最新文件的脚本
+Usage: $SHELL_NAME [options]
+    -h |    print help usage
+    -u |    username/password@ip
+    -r |    remotePath
+    -l |    localPath
+    -s |    suffix
+    -d |    deleteDays 
+
 # 使用前提
-  # 具有可执行权限 chmod +x autoGetFileFromFTP.sh
-  # 有ftp服务器及相关帐号
+    # 部署机器上已安装ftp客户端 能执行ftp命令
+    # 具有可执行权限 chmod +x autoGetFileFromFTP.sh
+    # 有ftp服务器及相关帐号
 
 # 命令行选项如何使用?
-	# autoGetFileFromFTP.sh -u maning/1@10.4.124.166 -r bak-project/svn -l /Users/mang/work/dataBak/svnBak -s zip -d 3  >>/Users/mang/work/dataBak/svnBak/bak.log 2>&1 
-	# 注 该脚本里设置了默认的参数 如果不想输入大长串的命令行选择也可在脚本中设置默认的参数 在不使用命令行参数的情况下就走默认的参数. 修改默认参数后可直接使用 autoGetFileFromFtp.sh 这样的命令运行
+    # autoGetFileFromFTP.sh -u username/password@192.168.1.2 -r bak-project/svn -l /Users/mang/work/dataBak/svnBak -s zip -d 3  >>/Users/mang/work/dataBak/svnBak/bak.log 2>&1 
+    # 注 该脚本里设置了默认的参数 如果不想输入大长串的命令行选择也可在脚本中设置默认的参数 在不使用命令行参数的情况下就走默认的参数. 修改默认参数后可直接使用 autoGetFileFromFtp.sh 这样的命令运行
 
 # 如何在crontab中使用
-	# 每周1 2 3 4 5 的16:16执行从ftp取最新svn备份的脚本
-	# 16 16 * * 1,2,3,4,5 /Users/mang/AppData/快盘/mac/bat-mac/autoGetFileFromFTP/autoGetFileFromFTP.sh -u maning/1@10.4.124.166 -r bak-project/svn -l /Users/mang/work/dataBak/svnBak -s zip -d 3  >>/Users/mang/work/dataBak/svnBak/bak.log 2>>&1
+    # 每周1 2 3 4 5 的16:16执行从ftp取最新svn备份的脚本
+    # 16 16 * * 1,2,3,4,5 /Users/mang/work/workData/shell/bat-mac/autoGetFileFromFTP/autoGetFileFromFTP.sh -u username/password@192.168.1.1 -r bak-project/svn -l /Users/mang/work/dataBak/svnBak -s zip -d 3  >>/Users/mang/work/dataBak/svnBak/bak.log 2>&1
 
+EOM
+exit 0
+}
 #==============================todo==============================
-# 放到github上 用mac的git命令放
 # 删除比下载文件早3天的文件 目前crontab中不支持touch -d  date -d  这样的-d参数
 # 默认连接3次：如果当时未连接上，则10分钟后重新连接下载 
 
@@ -46,6 +60,9 @@ version=V7-20161130
 		# 用一些函数代替原来的写法 如init check_parameter 
 		# 采用参数version outputRuntime控制是否输出版本信息 运行时间 
 		# 采用writeLog.sh写日志
+# V7 20171110
+    # * 添加-h选项，并且将使用说明纳入usage函数中 方便打印使用说明
+    # fix 修复如果本地目录不存在 报找不到目录的错误 
 
 ###############################默认配置################################################
 
@@ -194,8 +211,10 @@ do
 		IS_DEBUG=true;;
      M) fun_OutputOpinion $opt $OPTARG
 		CALLBACK_MESSAGE=$OPTARG;;
+     h) fun_OutputOpinion $opt $OPTARG
+		usage;;
      *) fun_OutputOpinion $opt $OPTARG
-		 exit 404;;
+		 usage;;
   esac
 done
 
@@ -230,6 +249,7 @@ fun_init
 # 如下写脚本逻辑
 
 # 切换到本地目标目录 因为ftp get 命令是把文件下载到当前目录
+[ ! -d $localPath ] && mkdir -p $localPath
 cd $localPath;
 
 # 先测试FTP是否连接成功 如果能连接成功再进行下一步
@@ -301,6 +321,9 @@ EOF
 	#echo "delete.sh -n3 -o $localPath/lastDelete.log -s $suffix $localPath >/dev/null"
 	#delete.sh -n3 -o $localPath/lastDelete.log -s $suffix $localPath >/dev/null 2>&1
 	# 如下使用$PARENT_PATH 是为了以后换网盘路径不影响这里
+    
+    [ ! -d ${PARENT_PATH}/util/log ] && mkdir -p ${PARENT_PATH}/util/log
+
 	delete.sh -M "$SHELL_NAME-$CALLBACK_MESSAGE" -n${deleteDays} -o $localPath/lastDelete.log -s $suffix $localPath >>$PARENT_PATH/util/log/delete.sh_autoGetFileFromFTP.log 2>&1
 
 	# 如下把要删除的文件输出到控制台 方便重定向写日志
