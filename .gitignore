@@ -18,6 +18,7 @@ bak
 copyShell/config/license/
 copyShell/config/408src/
 copyShell/config/auxsrc/
+copyShell/config/pszx-server/
 
 # 不想同步的目录
 util/commonLog/
